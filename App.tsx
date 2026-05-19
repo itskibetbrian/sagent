@@ -15,14 +15,14 @@ import { textFont } from './src/constants/typography';
 import { ThemeProvider, useTheme } from './src/hooks/useTheme';
 import { CategoriesProvider } from './src/hooks/useCategories';
 import { useFonts } from 'expo-font';
-import { 
-  Rubik_400Regular, 
-  Rubik_500Medium, 
-  Rubik_600SemiBold, 
-  Rubik_700Bold, 
-  Rubik_800ExtraBold, 
-  Rubik_900Black 
-} from '@expo-google-fonts/rubik';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+} from '@expo-google-fonts/inter';
 
 const TextWithDefaults = Text as typeof Text & { defaultProps?: { style?: unknown } };
 const TextInputWithDefaults = TextInput as typeof TextInput & { defaultProps?: { style?: unknown } };
@@ -48,12 +48,12 @@ const AppShell: React.FC<{ fontsReady: boolean }> = ({ fontsReady }) => {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Rubik_400Regular,
-    Rubik_500Medium,
-    Rubik_600SemiBold,
-    Rubik_700Bold,
-    Rubik_800ExtraBold,
-    Rubik_900Black,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black,
   });
 
   return (

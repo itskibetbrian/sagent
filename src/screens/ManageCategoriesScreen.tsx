@@ -279,7 +279,7 @@ export const ManageCategoriesScreen: React.FC = () => {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🗂️</Text>
+            <Tag size={46} color={theme.primary} strokeWidth={2} />
             <Text style={[styles.emptyTitle, { color: theme.text }]}>No categories yet</Text>
             <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>Tap + to create your first one</Text>
           </View>
@@ -329,7 +329,6 @@ const styles = StyleSheet.create({
   colorSwatch: { width: 12, height: 12, borderRadius: 6 },
   rowBtn: { padding: 4 },
   empty: { alignItems: 'center', paddingTop: 80, gap: 12 },
-  emptyIcon: { fontSize: 48 },
   emptyTitle: { fontSize: 20, ...textFont('bold') },
   emptySubtitle: { fontSize: 14 },
   fab: { position: 'absolute', right: 24, width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 8 },

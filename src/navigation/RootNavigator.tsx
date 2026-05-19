@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, LogBox, Image, Text, StyleSheet, StatusBar } from 'react-native';
+import { View, LogBox, StyleSheet, StatusBar } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { db } from '../services/database';
@@ -24,11 +24,8 @@ LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const LaunchSplash = ({ backgroundColor, textColor }: { backgroundColor: string; textColor: string }) => (
-  <View style={[splashStyles.container, { backgroundColor }]}>
-    <Image source={require('../../assets/splash.png')} style={splashStyles.logo} resizeMode="contain" />
-    <Text style={[splashStyles.title, { color: textColor }]}>Sagent</Text>
-  </View>
+const LaunchSplash = ({ backgroundColor }: { backgroundColor: string }) => (
+  <View style={[splashStyles.container, { backgroundColor }]} />
 );
 
 interface RootNavigatorProps {
@@ -43,8 +40,6 @@ export const RootNavigator: React.FC<RootNavigatorProps> = ({ fontsReady }) => {
   // Use theme colors immediately to prevent flashes. 
   // useTheme provides the correct mode (dark/light) based on system pref instantly.
   const splashBg = theme.background;
-  const splashText = theme.text;
-
   const navTheme = {
     ...DarkTheme,
     dark: mode === 'dark',
@@ -97,7 +92,7 @@ export const RootNavigator: React.FC<RootNavigatorProps> = ({ fontsReady }) => {
   }, [fontsReady, isReady, isThemeReady]);
 
   if (!isReady || !isThemeReady || !fontsReady) {
-    return <LaunchSplash backgroundColor={splashBg} textColor={splashText} />;
+    return <LaunchSplash backgroundColor={splashBg} />;
   }
 
   return (
@@ -158,15 +153,5 @@ const splashStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-  },
-  logo: {
-    width: 220,
-    height: 220,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 32,
-    ...textFont('black'),
-    letterSpacing: 1.2,
   },
 });

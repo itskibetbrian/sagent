@@ -155,7 +155,7 @@ export const HomeScreen: React.FC = () => {
 
     return (
       <View style={styles.empty}>
-        <Text style={[styles.emptyIcon, { color: theme.primary }]}>[]</Text>
+        <Sparkles size={42} color={theme.primary} style={styles.emptyIcon} />
         <Text style={[styles.emptyTitle, { color: theme.text }]}>{title}</Text>
         <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
 
@@ -379,8 +379,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyIcon: {
-    ...textFont('regular', true),
-    fontSize: 40,
     marginBottom: 16,
   },
   emptyTitle: {

@@ -2,13 +2,13 @@ import { Platform, TextStyle } from 'react-native';
 
 export type FontWeight = 'regular' | 'medium' | 'semibold' | 'bold' | 'extrabold' | 'black';
 
-export const RUBIK_FONTS: Record<FontWeight, string> = {
-  regular: 'Rubik_400Regular',
-  medium: 'Rubik_500Medium',
-  semibold: 'Rubik_600SemiBold',
-  bold: 'Rubik_700Bold',
-  extrabold: 'Rubik_800ExtraBold',
-  black: 'Rubik_900Black',
+export const APP_FONTS: Record<FontWeight, string> = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+  extrabold: 'Inter_800ExtraBold',
+  black: 'Inter_900Black',
 };
 
 export const textFont = (weight: FontWeight = 'regular', preferSystem: boolean = false): TextStyle => {
@@ -19,6 +19,6 @@ export const textFont = (weight: FontWeight = 'regular', preferSystem: boolean =
     };
   }
   return {
-    fontFamily: RUBIK_FONTS[weight] || RUBIK_FONTS.regular,
+    fontFamily: APP_FONTS[weight] || APP_FONTS.regular,
   };
 };

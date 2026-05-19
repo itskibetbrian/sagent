@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Heart } from 'lucide-react-native';
 
 import { SnippetCard } from '../components/cards/SnippetCard';
 import { db } from '../services/database';
@@ -99,7 +100,7 @@ export const FavoritesScreen: React.FC = () => {
         ) : null}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={[styles.emptyIcon, { color: theme.primary }]}>♡</Text>
+            <Heart size={44} color={theme.primary} strokeWidth={2} />
             <Text style={[styles.emptyTitle, { color: theme.text }]}>No favorites yet</Text>
             <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
               Pin your most-sent messages here for one-tap sharing.
@@ -124,7 +125,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: 32, gap: 12 },
-  emptyIcon: { ...textFont('regular', true), fontSize: 44 },
   emptyTitle: { ...textFont('bold'), fontSize: 22 },
   emptySubtitle: { ...textFont('regular'), fontSize: 15, textAlign: 'center', lineHeight: 23 },
 });

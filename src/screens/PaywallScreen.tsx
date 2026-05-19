@@ -9,10 +9,11 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Check, Crown, LoaderCircle, X } from 'lucide-react-native';
+import { Check, LoaderCircle, X } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { textFont } from '../constants/typography';
 import { useTheme } from '../hooks/useTheme';
+import { BrandIcon } from '../components/common/BrandIcon';
 import { db } from '../services/database';
 import nativeBilling, {
   NativeBillingState,
@@ -247,7 +248,7 @@ export const PaywallScreen: React.FC = () => {
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
       <View style={styles.hero}>
-        <Crown size={44} color={theme.primary} fill={`${theme.primary}20`} />
+        <BrandIcon size={88} />
         <Text style={[styles.heroTitle, { color: theme.text }]}>Sagent Pro Closer</Text>
         <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
           Join the top 1% of closers.
