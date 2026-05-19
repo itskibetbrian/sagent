@@ -26,38 +26,38 @@ export const OnboardingScreen: React.FC = () => {
 
   const steps = [
     {
-      title: 'Meet Sagent',
-      subtitle: 'Save the messages you send most often, then share them from one clean library.',
+      title: 'Close deals faster',
+      subtitle: 'Stop retyping the same messages. Save once, send anywhere in under 10 seconds.',
       accent: theme.primary,
       body: (
         <View style={styles.guideList}>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Tap any message card to open the native share sheet.</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Use the clipboard icon when you only need a silent copy.</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Long-press a message card when you want to edit it.</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>Price lists, follow-ups, payment links — ready in one tap</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>Share to WhatsApp, Gmail, SMS — any app instantly</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>Built for sellers who send the same messages every day</Text>
         </View>
       ),
     },
     {
-      title: 'Start with examples',
-      subtitle: 'Sagent includes ready-made Sales and Support messages on first launch.',
+      title: 'Ready to go',
+      subtitle: 'Sagent comes loaded with Sales and Support messages so you can start sending immediately.',
       accent: theme.success,
       body: (
         <View style={styles.guideList}>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Sales: price lists, payment links, thank-yous, follow-ups, and FAQs.</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Support: issue received, troubleshooting steps, and resolved updates.</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Create your own categories anytime from Messages.</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>Sales: price lists, payment links, thank-yous, follow-ups</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>Support: issue received, troubleshooting, resolved updates</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>Add your own messages and categories anytime</Text>
         </View>
       ),
     },
     {
-      title: 'Send faster',
-      subtitle: 'Free Sagent includes 50 shared messages per month with a Sagent watermark.',
+      title: "You're in control",
+      subtitle: "Send faster, close more. Upgrade when you're ready.",
       accent: theme.primary,
       body: (
         <View style={styles.guideList}>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Premium unlocks unlimited folders and messages.</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Premium shared messages send without the Sagent watermark.</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Your messages and preferences stay stored locally on this device.</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>25 free sends every month to get started</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>Pro Closer unlocks unlimited sends and folders</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>No watermark on premium — pure professionalism</Text>
         </View>
       ),
     },

@@ -11,13 +11,13 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Check, LoaderCircle, X } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Toast from 'react-native-toast-message';
 import { textFont } from '../constants/typography';
 import { useTheme } from '../hooks/useTheme';
 import { BrandIcon } from '../components/common/BrandIcon';
 import { db } from '../services/database';
 import nativeBilling, {
   NativeBillingState,
-  NativeSubscriptionOffer,
   NativeSubscriptionProduct,
 } from '../services/nativeBilling';
 import { syncPremiumStatusFromBilling } from '../services/premiumSync';
@@ -83,7 +83,7 @@ export const PaywallScreen: React.FC = () => {
   const [plan, setPlan] = useState<PlanKey>('yearly');
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [products, setProducts] = useState<NativeSubscriptionProduct[]>([]);
-  const [billingState, setBillingState] = useState<NativeBillingState>({ status: 'initializing' });
+  const [, setBillingState] = useState<NativeBillingState>({ status: 'initializing' });
   const [isCheckingPremium, setIsCheckingPremium] = useState(true);
 
   useEffect(() => {
@@ -143,7 +143,6 @@ export const PaywallScreen: React.FC = () => {
 
       if (state.status === 'error') {
         setIsPurchasing(false);
-        Alert.alert('Billing error', state.message ?? 'Google Play Billing encountered an error.');
         return;
       }
 
@@ -161,11 +160,15 @@ export const PaywallScreen: React.FC = () => {
         if (isMounted) setBillingState(currentState);
 
         const result = await nativeBilling.fetchSubscriptions(Object.values(SUBSCRIPTION_SKUS));
+        if (result.length === 0) {
+          throw new Error('No subscription products returned from Google Play.');
+        }
         if (isMounted) setProducts(result);
       } catch (error: any) {
+        // TODO: remove silent fail before production
+        // Products must exist in Play Console first
         if (isMounted) {
           setBillingState({ status: 'error', message: error?.message });
-          Alert.alert('Google Play unavailable', error?.message ?? 'Unable to load premium plans from Google Play.');
         }
       }
     })();
@@ -193,52 +196,10 @@ export const PaywallScreen: React.FC = () => {
 
   const active = plans[plan];
 
-  const purchase = async () => {
-    if (!plan) {
-      return;
-    }
-
-    if (Platform.OS !== 'android') {
-      Alert.alert('Google Play only', 'This checkout flow is currently available in the Android app only.');
-      return;
-    }
-
-    if (!nativeBilling.isAvailable()) {
-      Alert.alert('Google Play unavailable', 'Native billing is not available right now.');
-      return;
-    }
-
-    if (billingState.status === 'initializing') {
-      Alert.alert('Google Play unavailable', 'Google Play is not ready yet. Please try again in a moment.');
-      return;
-    }
-
-    const sku = SUBSCRIPTION_SKUS[plan];
-    const subscription = subscriptionsBySku[sku];
-
-    if (!subscription) {
-      Alert.alert(
-        'Plan not ready',
-        'This plan is not available from Google Play yet. Add the matching subscription product in Play Console and try again.'
-      );
-      return;
-    }
-
-    const offer = subscription.offers.find((item: NativeSubscriptionOffer) => item.offerToken);
-    const offerToken = offer?.offerToken ?? null;
-
-    if (!offerToken) {
-      Alert.alert('Plan not ready', 'This plan is missing a Google Play offer token.');
-      return;
-    }
-
-    setIsPurchasing(true);
-    try {
-      await nativeBilling.launchPurchase(subscription.productId, offerToken);
-    } catch (error: any) {
-      setIsPurchasing(false);
-      Alert.alert('Checkout failed', error?.message ?? 'Unable to open the Google Play purchase popup.');
-    }
+  const purchase = () => {
+    Toast.show({ type: 'info', text1: "Coming soon — we'll notify you!" });
+    // TODO: re-enable before production
+    // await nativeBilling.launchPurchase(subscription.productId, offerToken);
   };
 
   if (isCheckingPremium) {

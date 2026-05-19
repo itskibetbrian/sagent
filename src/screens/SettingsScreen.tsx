@@ -9,6 +9,7 @@ import {
   Alert,
   Linking,
   Share,
+  Modal,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,6 +24,9 @@ import {
   Share2,
   Bug,
   Trash2,
+  Clipboard,
+  Edit2,
+  X,
 } from 'lucide-react-native';
 import { db } from '../services/database';
 import { textFont } from '../constants/typography';
@@ -81,6 +85,7 @@ export const SettingsScreen: React.FC = () => {
   const { theme } = useTheme();
   const { isPremium, refresh, refreshShareUsage } = useSnippets();
   const [hapticEnabled, setHapticEnabled] = useState(true);
+  const [showHowTo, setShowHowTo] = useState(false);
 
   const loadPreferences = useCallback(() => {
     db.getPreference('haptic', 'true').then(v => setHapticEnabled(v === 'true'));
@@ -107,17 +112,7 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const handleShowHowToUse = () => {
-    Alert.alert(
-      'How to use Sagent',
-      [
-        'Tap a message card to share it.',
-        'Tap the copy icon to copy quietly.',
-        'Long-press a card to edit it.',
-        'Use categories to filter messages.',
-        'Use Recent to find messages you copied or shared lately.',
-        'Tap template suggestions when a category is empty.',
-      ].join('\n\n')
-    );
+    setShowHowTo(true);
   };
 
   const handleClearAllData = () => {
@@ -144,102 +139,168 @@ export const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
-      {!isPremium && (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {!isPremium && (
+          <TouchableOpacity
+            style={[styles.premiumHero, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
+            onPress={() => navigation.navigate('Paywall', { source: 'settings' })}
+            activeOpacity={0.88}
+          >
+            <View style={styles.premiumHeader}>
+              <Crown size={26} color={theme.onPrimary} />
+              <Text style={[styles.premiumTitle, { color: theme.onPrimary }]}>Upgrade to Pro Closer</Text>
+            </View>
+            <Text style={[styles.premiumSub, { color: `${theme.onPrimary}DD` }]}>
+              Stop typing, start closing. Get the full power of Sagent.
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
-          style={[styles.premiumHero, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
-          onPress={() => navigation.navigate('Paywall', { source: 'settings' })}
+          style={[styles.shareCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
+          onPress={() => void handleShareApp()}
           activeOpacity={0.88}
         >
-          <View style={styles.premiumHeader}>
-            <Crown size={26} color={theme.onPrimary} />
-            <Text style={[styles.premiumTitle, { color: theme.onPrimary }]}>Upgrade to Pro Closer</Text>
+          <View style={[styles.shareIconWrap, { backgroundColor: theme.primarySoft }]}>
+            <Share2 size={20} color={theme.primary} />
           </View>
-          <Text style={[styles.premiumSub, { color: `${theme.onPrimary}DD` }]}>
-            Stop typing, start closing. Get the full power of Sagent.
-          </Text>
+          <View style={styles.shareTextWrap}>
+            <Text style={[styles.shareTitle, { color: theme.text }]}>Share Sagent</Text>
+            <Text style={[styles.shareSub, { color: theme.textSecondary }]}>Invite your friends or colleagues to try Sagent.</Text>
+          </View>
+          <ChevronRight size={18} color={theme.textMuted} />
         </TouchableOpacity>
-      )}
 
-      <TouchableOpacity
-        style={[styles.shareCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
-        onPress={() => void handleShareApp()}
-        activeOpacity={0.88}
-      >
-        <View style={[styles.shareIconWrap, { backgroundColor: theme.primarySoft }]}>
-          <Share2 size={20} color={theme.primary} />
+        <Section title="Usage">
+          <Row
+            icon={Info}
+            iconColor={theme.primary}
+            label="How to use Sagent"
+            sublabel="Quick tips for sharing, copying, editing, and organizing"
+            onPress={handleShowHowToUse}
+          />
+        </Section>
+
+        <Section title="Preferences">
+          <Row
+            icon={Zap}
+            iconColor={theme.success}
+            label="Haptic feedback"
+            sublabel="Vibrate on send"
+            right={
+              <Switch
+                value={hapticEnabled}
+                onValueChange={handleToggleHaptic}
+                trackColor={{ true: theme.primary, false: theme.border }}
+                thumbColor={theme.onPrimary}
+              />
+            }
+          />
+        </Section>
+
+        <Section title="Data">
+          <Row
+            icon={Trash2}
+            iconColor={theme.danger}
+            label="Clear all data"
+            danger
+            onPress={handleClearAllData}
+          />
+        </Section>
+
+        <Section title="Support">
+          <Row
+            icon={Bug}
+            iconColor={theme.primary}
+            label="Report a Bug or Idea"
+            sublabel="Send feedback by email"
+            onPress={() => Linking.openURL('mailto:support@sagent.app?subject=Sagent%20Bug%20or%20Idea')}
+          />
+        </Section>
+
+        <Section title="Legal">
+          <Row
+            icon={FileText}
+            iconColor={theme.textSecondary}
+            label="Terms & Conditions"
+            onPress={() => Linking.openURL('https://nogeybix.com/legal/terms')}
+          />
+          <Row
+            icon={ExternalLink}
+            iconColor={theme.textSecondary}
+            label="Privacy Policy"
+            onPress={() => Linking.openURL('https://nogeybix.com/legal/privacy')}
+          />
+        </Section>
+
+        <Text style={[styles.version, { color: theme.textSecondary }]}>Sagent v1.0.0</Text>
+      </ScrollView>
+
+      <Modal visible={showHowTo} transparent animationType="slide" onRequestClose={() => setShowHowTo(false)}>
+        <View style={styles.modalRoot}>
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowHowTo(false)} />
+          <View style={[styles.howToSheet, { backgroundColor: theme.surface }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
+            <TouchableOpacity style={styles.sheetClose} onPress={() => setShowHowTo(false)} activeOpacity={0.7}>
+              <X size={20} color={theme.textMuted} />
+            </TouchableOpacity>
+
+            <Text style={[styles.howToTitle, { color: theme.text }]}>How Sagent works</Text>
+            <Text style={[styles.howToSubtitle, { color: theme.textSecondary }]}>
+              Everything you need to know in 30 seconds.
+            </Text>
+
+            <View style={styles.howToList}>
+              {[
+                {
+                  icon: Share2,
+                  title: 'Send a message',
+                  description: 'Tap any message card to open the share sheet — send to WhatsApp, Gmail, SMS, or any app instantly.',
+                },
+                {
+                  icon: Clipboard,
+                  title: 'Copy quietly',
+                  description: 'Tap the clipboard icon on a card to copy without opening the share sheet. No interruption to your flow.',
+                },
+                {
+                  icon: Edit2,
+                  title: 'Edit a message',
+                  description: 'Long-press any message card to edit the title, content, or category.',
+                },
+                {
+                  icon: Zap,
+                  title: 'Go Pro Closer',
+                  description: 'Upgrade to remove the Sagent watermark and unlock unlimited sends and folders.',
+                },
+              ].map((item, index, items) => {
+                const Icon = item.icon;
+                return (
+                  <View
+                    key={item.title}
+                    style={[
+                      styles.howToItem,
+                      { borderBottomColor: theme.border },
+                      index === items.length - 1 && styles.howToItemLast,
+                    ]}
+                  >
+                    <View style={[styles.howToIcon, { backgroundColor: theme.primarySoft }]}>
+                      <Icon size={20} color={theme.primary} strokeWidth={2} />
+                    </View>
+                    <View style={styles.howToText}>
+                      <Text style={[styles.howToItemTitle, { color: theme.text }]}>{item.title}</Text>
+                      <Text style={[styles.howToItemDescription, { color: theme.textSecondary }]}>
+                        {item.description}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
         </View>
-        <View style={styles.shareTextWrap}>
-          <Text style={[styles.shareTitle, { color: theme.text }]}>Share Sagent</Text>
-          <Text style={[styles.shareSub, { color: theme.textSecondary }]}>Invite your friends or colleagues to try Sagent.</Text>
-        </View>
-        <ChevronRight size={18} color={theme.textMuted} />
-      </TouchableOpacity>
-
-      <Section title="Usage">
-        <Row
-          icon={Info}
-          iconColor={theme.primary}
-          label="How to use Sagent"
-          sublabel="Quick tips for sharing, copying, editing, and organizing"
-          onPress={handleShowHowToUse}
-        />
-      </Section>
-
-      <Section title="Preferences">
-        <Row
-          icon={Zap}
-          iconColor={theme.success}
-          label="Haptic feedback"
-          sublabel="Vibrate on send"
-          right={
-            <Switch
-              value={hapticEnabled}
-              onValueChange={handleToggleHaptic}
-              trackColor={{ true: theme.primary, false: theme.border }}
-              thumbColor={theme.onPrimary}
-            />
-          }
-        />
-      </Section>
-
-      <Section title="Data">
-        <Row
-          icon={Trash2}
-          iconColor={theme.danger}
-          label="Clear all data"
-          danger
-          onPress={handleClearAllData}
-        />
-      </Section>
-
-      <Section title="Support">
-        <Row
-          icon={Bug}
-          iconColor={theme.primary}
-          label="Report a Bug or Idea"
-          sublabel="Send feedback by email"
-          onPress={() => Linking.openURL('mailto:support@sagent.app?subject=Sagent%20Bug%20or%20Idea')}
-        />
-      </Section>
-
-      <Section title="Legal">
-        <Row
-          icon={FileText}
-          iconColor={theme.textSecondary}
-          label="Terms & Conditions"
-          onPress={() => Linking.openURL('https://nogeybix.com/legal/terms')}
-        />
-        <Row
-          icon={ExternalLink}
-          iconColor={theme.textSecondary}
-          label="Privacy Policy"
-          onPress={() => Linking.openURL('https://nogeybix.com/legal/privacy')}
-        />
-      </Section>
-
-      <Text style={[styles.version, { color: theme.textSecondary }]}>Sagent v1.0.0</Text>
-    </ScrollView>
+      </Modal>
+    </View>
   );
 };
 
@@ -307,6 +368,50 @@ const styles = StyleSheet.create({
   rowText: { flex: 1 },
   rowLabel: { ...textFont('semibold'), fontSize: 16 },
   rowSublabel: { ...textFont('regular'), fontSize: 13, marginTop: 2, lineHeight: 19 },
+  modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.48)',
+  },
+  howToSheet: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 999,
+    alignSelf: 'center',
+    marginBottom: 18,
+  },
+  sheetClose: { position: 'absolute', top: 18, right: 18, padding: 8 },
+  howToTitle: { ...textFont('bold'), fontSize: 22, marginBottom: 6 },
+  howToSubtitle: { ...textFont('regular'), fontSize: 14, marginBottom: 24 },
+  howToList: { gap: 20 },
+  howToItem: {
+    flexDirection: 'row',
+    gap: 14,
+    paddingBottom: 20,
+    borderBottomWidth: 0.5,
+  },
+  howToItemLast: {
+    paddingBottom: 0,
+    borderBottomWidth: 0,
+  },
+  howToIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  howToText: { flex: 1 },
+  howToItemTitle: { ...textFont('semibold'), fontSize: 15, marginBottom: 4 },
+  howToItemDescription: { ...textFont('regular'), fontSize: 13, lineHeight: 19 },
   version: { ...textFont('regular'), textAlign: 'center', fontSize: 13, marginTop: 8 },
 });
 
