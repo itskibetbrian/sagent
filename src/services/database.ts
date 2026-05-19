@@ -88,7 +88,7 @@ class DatabaseService {
     ]);
 
     // AsyncStorage is not installed in this app and the task forbids new libraries,
-    // so first-launch seeding uses Relay's existing preference store.
+    // so first-launch seeding uses Sagent's existing preference store.
     if ((row?.count ?? 0) > 0 || seededPreference === 'true' || hasOnboarded === 'true') {
       return;
     }
@@ -347,7 +347,7 @@ class DatabaseService {
   async clearAllData(): Promise<void> {
     const db = this.getDb();
 
-    // Relay uses SQLite preferences/tables instead of AsyncStorage, so this
+    // Sagent uses SQLite preferences/tables instead of AsyncStorage, so this
     // clears the equivalent app-owned keys, saved messages, favorites, and categories.
     await db.execAsync(`
       DELETE FROM snippets;

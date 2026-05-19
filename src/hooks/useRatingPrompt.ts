@@ -29,8 +29,8 @@ export const useRatingPrompt = () => {
       }
 
       Alert.alert(
-        'Enjoying Relay?',
-        'If you find Relay helpful, please take a moment to rate us. It really helps us out!',
+        'Enjoying Sagent?',
+        'If you find Sagent helpful, please take a moment to rate us. It really helps us out!',
         [
           {
             text: 'No Thanks',
@@ -51,7 +51,7 @@ export const useRatingPrompt = () => {
             onPress: async () => {
               await db.setPreference('rating_status', 'rated');
               const url = Platform.OS === 'android' 
-                ? 'https://play.google.com/store/apps/details?id=com.relay.app'
+                ? 'https://play.google.com/store/apps/details?id=com.sagent.app'
                 : 'https://apps.apple.com';
               Linking.openURL(url).catch(() => {
                 Alert.alert('Error', 'Could not open the store page.');

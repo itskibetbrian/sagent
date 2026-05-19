@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Relay",
-    "slug": "relay",
+    "name": "Sagent",
+    "slug": "sagent",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#EDE9F6",
-    "scheme": "relay",
+    "scheme": "sagent",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
@@ -16,7 +16,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.relay.app",
+      "bundleIdentifier": "com.sagent.app",
       "buildNumber": "1",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Not used.",
@@ -29,7 +29,7 @@
         "backgroundColor": "#0F0F13"
       },
       "backgroundColor": "#EDE9F6",
-      "package": "com.relay.app",
+      "package": "com.sagent.app",
       "versionCode": 1,
       "permissions": []
     },

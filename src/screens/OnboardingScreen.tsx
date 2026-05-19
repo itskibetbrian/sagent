@@ -26,7 +26,7 @@ export const OnboardingScreen: React.FC = () => {
 
   const steps = [
     {
-      title: 'Meet Relay',
+      title: 'Meet Sagent',
       subtitle: 'Save the messages you send most often, then share them from one clean library.',
       accent: theme.primary,
       body: (
@@ -39,7 +39,7 @@ export const OnboardingScreen: React.FC = () => {
     },
     {
       title: 'Start with examples',
-      subtitle: 'Relay includes ready-made Sales and Support messages on first launch.',
+      subtitle: 'Sagent includes ready-made Sales and Support messages on first launch.',
       accent: theme.success,
       body: (
         <View style={styles.guideList}>
@@ -51,12 +51,12 @@ export const OnboardingScreen: React.FC = () => {
     },
     {
       title: 'Send faster',
-      subtitle: 'Free Relay includes 50 shared messages per month with a Relay watermark.',
+      subtitle: 'Free Sagent includes 50 shared messages per month with a Sagent watermark.',
       accent: theme.primary,
       body: (
         <View style={styles.guideList}>
           <Text style={[styles.guideLine, { color: theme.text }]}>Premium unlocks unlimited folders and messages.</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Premium shared messages send without the Relay watermark.</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>Premium shared messages send without the Sagent watermark.</Text>
           <Text style={[styles.guideLine, { color: theme.text }]}>Your messages and preferences stay stored locally on this device.</Text>
         </View>
       ),
@@ -123,14 +123,14 @@ export const OnboardingScreen: React.FC = () => {
           By continuing, you agree to our{' '}
           <Text 
             style={[styles.link, { color: theme.primary }]}
-            onPress={() => WebBrowser.openBrowserAsync('https://relay.app/terms')}
+            onPress={() => WebBrowser.openBrowserAsync('https://sagent.app/terms')}
           >
             Terms of Service
           </Text>
           {' '}and{' '}
           <Text 
             style={[styles.link, { color: theme.primary }]}
-            onPress={() => WebBrowser.openBrowserAsync('https://relay.app/privacy')}
+            onPress={() => WebBrowser.openBrowserAsync('https://sagent.app/privacy')}
           >
             Privacy Policy
           </Text>

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View, LogBox, Image, Text, StyleSheet, StatusBar } from 'react-native';
+import { View, LogBox, Image, Text, StyleSheet, StatusBar } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { db } from '../services/database';
@@ -27,11 +27,15 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const LaunchSplash = ({ backgroundColor, textColor }: { backgroundColor: string; textColor: string }) => (
   <View style={[splashStyles.container, { backgroundColor }]}>
     <Image source={require('../../assets/splash.png')} style={splashStyles.logo} resizeMode="contain" />
-    <Text style={[splashStyles.title, { color: textColor }]}>Relay</Text>
+    <Text style={[splashStyles.title, { color: textColor }]}>Sagent</Text>
   </View>
 );
 
-export const RootNavigator: React.FC = () => {
+interface RootNavigatorProps {
+  fontsReady: boolean;
+}
+
+export const RootNavigator: React.FC<RootNavigatorProps> = ({ fontsReady }) => {
   const { theme, mode, isThemeReady } = useTheme();
   const [isReady, setIsReady] = useState(false);
   const [initialRoute, setInitialRoute] = useState<'Onboarding' | 'Main'>('Onboarding');
@@ -87,12 +91,12 @@ export const RootNavigator: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isReady && isThemeReady) {
+    if (isReady && isThemeReady && fontsReady) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [isReady, isThemeReady]);
+  }, [fontsReady, isReady, isThemeReady]);
 
-  if (!isReady || !isThemeReady) {
+  if (!isReady || !isThemeReady || !fontsReady) {
     return <LaunchSplash backgroundColor={splashBg} textColor={splashText} />;
   }
 

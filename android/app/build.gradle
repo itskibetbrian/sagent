@@ -99,9 +99,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.relay.app'
+    namespace 'com.sagent.app'
     defaultConfig {
-        applicationId 'com.relay.app'
+        applicationId 'com.sagent.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

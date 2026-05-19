@@ -1,6 +1,6 @@
-# Relay
+# Sagent
 
-Relay is a polished Expo + React Native message manager for saving text you reuse often, organizing it into categories, and sending it quickly.
+Sagent is a polished Expo + React Native message manager for saving text you reuse often, organizing it into categories, and sending it quickly.
 
 It is built for a clean mobile-first experience with local storage, optional app lock, favorites, Premium upgrade boilerplate, and a custom floating tab bar UI.
 
@@ -33,10 +33,10 @@ src/
 
 ## App Identity
 
-- App name: `Relay`
-- Expo slug: `relay`
-- Android package: `com.relay.app`
-- iOS bundle identifier: `com.relay.app`
+- App name: `Sagent`
+- Expo slug: `sagent`
+- Android package: `com.sagent.app`
+- iOS bundle identifier: `com.sagent.app`
 
 ## Storage
 
@@ -44,7 +44,7 @@ Messages, categories, preferences, onboarding flags, and free-tier share counter
 
 ## Premium
 
-Relay includes local Premium state and native billing integration hooks for:
+Sagent includes local Premium state and native billing integration hooks for:
 
 - Save hours every week
 - Unlimited messages

@@ -98,7 +98,7 @@ export const AddSnippetScreen: React.FC = () => {
     }
 
     if (hasCardNumber) {
-      Alert.alert('Sensitive data blocked', 'Do not store full credit card numbers in Relay.');
+      Alert.alert('Sensitive data blocked', 'Do not store full credit card numbers in Sagent.');
       return;
     }
     setIsSaving(true);
@@ -184,7 +184,7 @@ export const AddSnippetScreen: React.FC = () => {
             </Text>
             <Text style={[styles.noticeText, { color: theme.textSecondary }]}>
               {hasCardNumber
-                ? 'Relay should not be used to store full card numbers.'
+                ? 'Sagent should not be used to store full card numbers.'
                 : 'Avoid storing passwords, authentication codes, or similar secrets in this app.'}
             </Text>
           </View>

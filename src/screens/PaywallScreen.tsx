@@ -22,16 +22,16 @@ import nativeBilling, {
 import { syncPremiumStatusFromBilling } from '../services/premiumSync';
 
 const BENEFITS = [
-  'Reclaim 4+ Hours a Week — stop retyping the same messages. Send any message in under 10 seconds.',
+  'Reclaim 4+ Hours a Month — stop retyping the same messages. Send any message in under 10 seconds.',
   'Infinite Messages — never run out of space for your winning talk-tracks.',
-  'No Watermark — send scripts without the "Sent via Relay" tag. Professionalism only.',
+  'No Watermark — send scripts without the "Sent via Sagent" tag. Professionalism only.',
 ];
 
 // Billing prices must match the Google Play Console products exactly:
 // monthly -> $9.99, yearly -> $89.99.
 const SUBSCRIPTION_SKUS = {
-  monthly: 'com.relay.app.premium.monthly',
-  yearly: 'com.relay.app.premium.yearly',
+  monthly: 'com.sagent.app.premium.monthly',
+  yearly: 'com.sagent.app.premium.yearly',
 } as const;
 
 type PlanKey = keyof typeof SUBSCRIPTION_SKUS;
@@ -248,7 +248,7 @@ export const PaywallScreen: React.FC = () => {
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
       <View style={styles.hero}>
         <Crown size={44} color={theme.primary} fill={`${theme.primary}20`} />
-        <Text style={[styles.heroTitle, { color: theme.text }]}>Relay Pro Closer</Text>
+        <Text style={[styles.heroTitle, { color: theme.text }]}>Sagent Pro Closer</Text>
         <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
           Join the top 1% of closers.
         </Text>
@@ -321,7 +321,7 @@ export const PaywallScreen: React.FC = () => {
       </TouchableOpacity>
 
       <Text style={[styles.finePrint, { color: theme.textSecondary }]}>
-        Relay Pro Closer. Cancel anytime.
+        Sagent Pro Closer. Cancel anytime.
       </Text>
 
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.dismiss}>

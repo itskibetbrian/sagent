@@ -207,7 +207,7 @@ export const MainTabNavigator: React.FC = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'Relay',
+          title: 'Sagent',
           tabBarLabel: 'Messages',
           headerRight: () => (
             <TouchableOpacity onPress={() => void toggleTheme()} style={styles.headerBtn} activeOpacity={0.75}>
@@ -220,7 +220,7 @@ export const MainTabNavigator: React.FC = () => {
         name="Favorites"
         component={FavoritesScreen}
         options={{
-          title: 'Relay',
+          title: 'Sagent',
           tabBarLabel: 'Favorites',
         }}
       />

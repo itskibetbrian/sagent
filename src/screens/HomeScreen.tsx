@@ -72,7 +72,7 @@ export const HomeScreen: React.FC = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: 'Relay',
+      headerTitle: 'Sagent',
     });
   }, [navigation]);
 

@@ -120,7 +120,7 @@ export const SnippetsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     // AsyncStorage is not installed in this app and the task forbids new libraries,
-    // so Relay stores the same monthly counter shape in the existing preference store.
+    // so Sagent stores the same monthly counter shape in the existing preference store.
     const raw = await db.getPreference(SHARE_COUNT_KEY);
     if (!raw) {
       return current;
@@ -214,7 +214,7 @@ export const SnippetsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         // Ambiguity: sharing must use the full stored content with no truncation,
         // while the paywall still sells "No watermark"; only the watermark is appended.
-        shareText = `${fullContent}\n\nSent via Relay`;
+        shareText = `${fullContent}\n\nSent via Sagent`;
         const nextUsage = { ...usage, count: usage.count + 1 };
         await saveMonthlyShareCount(nextUsage);
         setMonthlyShareCount(Math.min(nextUsage.count, FREE_SHARE_LIMIT));

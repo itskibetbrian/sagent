@@ -33,13 +33,13 @@ TextWithDefaults.defaultProps.style = [TextWithDefaults.defaultProps.style, text
 TextInputWithDefaults.defaultProps = TextInputWithDefaults.defaultProps ?? {};
 TextInputWithDefaults.defaultProps.style = [TextInputWithDefaults.defaultProps.style, textFont()];
 
-const AppShell: React.FC = () => {
+const AppShell: React.FC<{ fontsReady: boolean }> = ({ fontsReady }) => {
   const { theme } = useTheme();
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}>
       <SafeAreaProvider>
-        <RootNavigator />
+        <RootNavigator fontsReady={fontsReady} />
         <Toast />
       </SafeAreaProvider>
     </GestureHandlerRootView>
@@ -56,14 +56,10 @@ export default function App() {
     Rubik_900Black,
   });
 
-  if (!fontsLoaded) {
-    return null;
-  }
-
   return (
     <ThemeProvider>
       <CategoriesProvider>
-        <AppShell />
+        <AppShell fontsReady={fontsLoaded} />
       </CategoriesProvider>
     </ThemeProvider>
   );

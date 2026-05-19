@@ -94,7 +94,7 @@ export const SettingsScreen: React.FC = () => {
 
   const handleShareApp = async () => {
     await Share.share({
-      message: 'Try Relay for saving and sending the messages you reuse every day: https://play.google.com/store/apps/details?id=com.relay.app',
+      message: 'Try Sagent for saving and sending the messages you reuse every day: https://play.google.com/store/apps/details?id=com.sagent.app',
     });
   };
 
@@ -108,7 +108,7 @@ export const SettingsScreen: React.FC = () => {
 
   const handleShowHowToUse = () => {
     Alert.alert(
-      'How to use Relay',
+      'How to use Sagent',
       [
         'Tap a message card to share it.',
         'Tap the copy icon to copy quietly.',
@@ -156,7 +156,7 @@ export const SettingsScreen: React.FC = () => {
             <Text style={[styles.premiumTitle, { color: theme.onPrimary }]}>Upgrade to Pro Closer</Text>
           </View>
           <Text style={[styles.premiumSub, { color: `${theme.onPrimary}DD` }]}>
-            Stop typing, start closing. Get the full power of Relay.
+            Stop typing, start closing. Get the full power of Sagent.
           </Text>
         </TouchableOpacity>
       )}
@@ -170,8 +170,8 @@ export const SettingsScreen: React.FC = () => {
           <Share2 size={20} color={theme.primary} />
         </View>
         <View style={styles.shareTextWrap}>
-          <Text style={[styles.shareTitle, { color: theme.text }]}>Share Relay</Text>
-          <Text style={[styles.shareSub, { color: theme.textSecondary }]}>Invite your friends or colleagues to try Relay.</Text>
+          <Text style={[styles.shareTitle, { color: theme.text }]}>Share Sagent</Text>
+          <Text style={[styles.shareSub, { color: theme.textSecondary }]}>Invite your friends or colleagues to try Sagent.</Text>
         </View>
         <ChevronRight size={18} color={theme.textMuted} />
       </TouchableOpacity>
@@ -180,7 +180,7 @@ export const SettingsScreen: React.FC = () => {
         <Row
           icon={Info}
           iconColor={theme.primary}
-          label="How to use Relay"
+          label="How to use Sagent"
           sublabel="Quick tips for sharing, copying, editing, and organizing"
           onPress={handleShowHowToUse}
         />
@@ -219,7 +219,7 @@ export const SettingsScreen: React.FC = () => {
           iconColor={theme.primary}
           label="Report a Bug or Idea"
           sublabel="Send feedback by email"
-          onPress={() => Linking.openURL('mailto:support@relay.app?subject=Relay%20Bug%20or%20Idea')}
+          onPress={() => Linking.openURL('mailto:support@sagent.app?subject=Sagent%20Bug%20or%20Idea')}
         />
       </Section>
 
@@ -238,7 +238,7 @@ export const SettingsScreen: React.FC = () => {
         />
       </Section>
 
-      <Text style={[styles.version, { color: theme.textSecondary }]}>Relay v1.0.0</Text>
+      <Text style={[styles.version, { color: theme.textSecondary }]}>Sagent v1.0.0</Text>
     </ScrollView>
   );
 };

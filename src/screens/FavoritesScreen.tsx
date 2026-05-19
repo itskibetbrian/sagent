@@ -31,7 +31,7 @@ export const FavoritesScreen: React.FC = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: 'Relay',
+      headerTitle: 'Sagent',
     });
   }, [navigation]);
 
