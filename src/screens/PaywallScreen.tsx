@@ -286,8 +286,12 @@ export const PaywallScreen: React.FC = () => {
         Sagent Pro Closer. Cancel anytime.
       </Text>
 
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.dismiss}>
-        <X size={20} color={theme.textMuted} />
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={[styles.dismiss, { backgroundColor: theme.surface, borderColor: theme.border }]}
+        activeOpacity={0.75}
+      >
+        <X size={24} color={theme.text} strokeWidth={3} />
       </TouchableOpacity>
     </ScrollView>
   );
@@ -341,7 +345,17 @@ const styles = StyleSheet.create({
   ctaText: { ...textFont('bold'), fontSize: 17 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   finePrint: { ...textFont('regular'), fontSize: 13, textAlign: 'center', lineHeight: 19, marginBottom: 16 },
-  dismiss: { position: 'absolute', top: 16, right: 16, padding: 8 },
+  dismiss: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 export default PaywallScreen;
