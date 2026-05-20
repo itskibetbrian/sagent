@@ -13,16 +13,15 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { textFont } from './src/constants/typography';
 import { ThemeProvider, useTheme } from './src/hooks/useTheme';
-import { CategoriesProvider } from './src/hooks/useCategories';
 import { useFonts } from 'expo-font';
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  Inter_900Black,
-} from '@expo-google-fonts/inter';
+  Onest_400Regular,
+  Onest_500Medium,
+  Onest_600SemiBold,
+  Onest_700Bold,
+  Onest_800ExtraBold,
+  Onest_900Black,
+} from '@expo-google-fonts/onest';
 
 const TextWithDefaults = Text as typeof Text & { defaultProps?: { style?: unknown } };
 const TextInputWithDefaults = TextInput as typeof TextInput & { defaultProps?: { style?: unknown } };
@@ -48,19 +47,17 @@ const AppShell: React.FC<{ fontsReady: boolean }> = ({ fontsReady }) => {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    Inter_900Black,
+    Onest_400Regular,
+    Onest_500Medium,
+    Onest_600SemiBold,
+    Onest_700Bold,
+    Onest_800ExtraBold,
+    Onest_900Black,
   });
 
   return (
     <ThemeProvider>
-      <CategoriesProvider>
-        <AppShell fontsReady={fontsLoaded} />
-      </CategoriesProvider>
+      <AppShell fontsReady={fontsLoaded} />
     </ThemeProvider>
   );
 }
