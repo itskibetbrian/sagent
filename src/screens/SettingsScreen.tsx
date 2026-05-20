@@ -215,7 +215,7 @@ export const SettingsScreen: React.FC = () => {
             iconColor={theme.primary}
             label="Report a Bug or Idea"
             sublabel="Send feedback by email"
-            onPress={() => Linking.openURL('mailto:support@sagent.app?subject=Sagent%20Bug%20or%20Idea')}
+            onPress={() => Linking.openURL('mailto:support@gosagent.com?subject=Sagent%20Bug%20or%20Idea')}
           />
         </Section>
 
@@ -224,13 +224,13 @@ export const SettingsScreen: React.FC = () => {
             icon={FileText}
             iconColor={theme.textSecondary}
             label="Terms & Conditions"
-            onPress={() => Linking.openURL('https://nogeybix.com/legal/terms')}
+            onPress={() => Linking.openURL('https://gosagent.com/terms')}
           />
           <Row
             icon={ExternalLink}
             iconColor={theme.textSecondary}
             label="Privacy Policy"
-            onPress={() => Linking.openURL('https://nogeybix.com/legal/privacy')}
+            onPress={() => Linking.openURL('https://gosagent.com/privacy')}
           />
         </Section>
 

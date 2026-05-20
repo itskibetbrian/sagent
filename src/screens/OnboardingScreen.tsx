@@ -123,14 +123,14 @@ export const OnboardingScreen: React.FC = () => {
           By continuing, you agree to our{' '}
           <Text 
             style={[styles.link, { color: theme.primary }]}
-            onPress={() => WebBrowser.openBrowserAsync('https://sagent.app/terms')}
+            onPress={() => WebBrowser.openBrowserAsync('https://gosagent.com/terms')}
           >
             Terms of Service
           </Text>
           {' '}and{' '}
           <Text 
             style={[styles.link, { color: theme.primary }]}
-            onPress={() => WebBrowser.openBrowserAsync('https://sagent.app/privacy')}
+            onPress={() => WebBrowser.openBrowserAsync('https://gosagent.com/privacy')}
           >
             Privacy Policy
           </Text>

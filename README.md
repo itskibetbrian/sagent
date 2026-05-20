@@ -37,6 +37,10 @@ src/
 - Expo slug: `sagent`
 - Android package: `com.sagent.app`
 - iOS bundle identifier: `com.sagent.app`
+- Website: `https://gosagent.com`
+- Support: `support@gosagent.com`
+- Terms & Conditions: `https://gosagent.com/terms`
+- Privacy Policy: `https://gosagent.com/privacy`
 
 ## Storage
 
