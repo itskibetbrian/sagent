@@ -106,6 +106,7 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
   const scale = useSharedValue(1);
   const glowOpacity = useSharedValue(0);
   const copyProgress = useSharedValue(0);
+  const heartScale = useSharedValue(1);
   const previewContent = getWordBoundaryPreview(snippet.content);
 
   // ── Animation styles ────────────────────────────────────────────────────
@@ -124,6 +125,10 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
       [0, 1],
       [theme.surface, theme.successSoft]
     ),
+  }));
+
+  const heartStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heartScale.value }],
   }));
 
   // ── Handlers ────────────────────────────────────────────────────────────
@@ -152,6 +157,10 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
 
   const handleFavorite = useCallback((event?: GestureResponderEvent) => {
     event?.stopPropagation?.();
+    heartScale.value = withSequence(
+      withTiming(1.25, { duration: 120 }),
+      withTiming(1, { duration: 120 })
+    );
     onFavorite(snippet.id);
   }, [snippet.id, onFavorite]);
 
@@ -222,7 +231,7 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
             query={searchQuery}
             style={[styles.content, { color: theme.textSecondary }]}
             highlightColor={theme.primarySoft}
-            numberOfLines={2}
+            numberOfLines={3}
           />
         </View>
 
@@ -261,18 +270,20 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
             </TouchableOpacity>
 
             {/* Favorite button */}
-            <TouchableOpacity
-              onPress={handleFavorite}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              activeOpacity={0.7}
-            >
-              <Heart
-                size={16}
-                color={snippet.isFavorite ? theme.danger : theme.textMuted}
-                fill={snippet.isFavorite ? theme.danger : 'transparent'}
-                strokeWidth={2}
-              />
-            </TouchableOpacity>
+              <Animated.View style={heartStyle}>
+              <TouchableOpacity
+                onPress={handleFavorite}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                activeOpacity={0.7}
+              >
+                <Heart
+                  size={16}
+                  color={snippet.isFavorite ? theme.danger : theme.textMuted}
+                  fill={snippet.isFavorite ? theme.danger : 'transparent'}
+                  strokeWidth={2}
+                />
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         </View>
       </AnimatedPressable>
@@ -301,19 +312,19 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     borderRadius: 16,
-    paddingHorizontal: 11,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderWidth: 1,
     height: 138,
     justifyContent: 'space-between',
     ...Platform.select({
       ios: {
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.22,
+        shadowRadius: 6,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
     }),
   },
@@ -332,9 +343,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     borderRadius: 20,
-    paddingHorizontal: 7,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    marginBottom: 6,
+    marginBottom: 4,
     gap: 4,
   },
   categoryDot: {
@@ -350,20 +361,20 @@ const styles = StyleSheet.create({
   title: {
     ...textFont('semibold'),
     fontSize: 14,
-    lineHeight: 18,
-    marginBottom: 4,
+    lineHeight: 16,
+    marginBottom: 2,
   },
   content: {
     ...textFont('regular'),
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: 15,
     flexShrink: 1,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 6,
   },
   actions: {
     flexDirection: 'row',

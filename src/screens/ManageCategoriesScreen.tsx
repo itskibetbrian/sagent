@@ -62,9 +62,10 @@ interface CategoryRowProps {
   category: Category;
   onEdit: (cat: Category) => void;
   onDelete: (cat: Category) => void;
+  canDelete: boolean;
 }
 
-const CategoryRow: React.FC<CategoryRowProps> = ({ category, onEdit, onDelete }) => {
+const CategoryRow: React.FC<CategoryRowProps> = ({ category, onEdit, onDelete, canDelete }) => {
   const { theme } = useTheme();
   const Icon = ICONS[category.icon] ?? Tag;
   return (
@@ -86,13 +87,15 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, onEdit, onDelete })
       >
         <Pencil size={16} color={theme.textSecondary} />
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.rowBtn}
-        onPress={() => onDelete(category)}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Trash2 size={16} color={theme.danger} />
-      </TouchableOpacity>
+      {canDelete && (
+        <TouchableOpacity
+          style={styles.rowBtn}
+          onPress={() => onDelete(category)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Trash2 size={16} color={theme.danger} />
+        </TouchableOpacity>
+      )}
     </Animated.View>
   );
 };
@@ -241,6 +244,22 @@ export const ManageCategoriesScreen: React.FC = () => {
   };
 
   const handleDelete = (cat: Category) => {
+    if (cat.id === 'other') {
+      Alert.alert(
+        'Cannot delete Other',
+        'The Other category must remain as the fallback category.'
+      );
+      return;
+    }
+
+    if (categories.length <= 1) {
+      Alert.alert(
+        'At least one category is required',
+        'You must keep at least one category in order to organize messages.'
+      );
+      return;
+    }
+
     Alert.alert(
       `Delete "${cat.name}"?`,
       'Messages in this category will move to the "Other" category.',
@@ -275,7 +294,12 @@ export const ManageCategoriesScreen: React.FC = () => {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <CategoryRow category={item} onEdit={openEdit} onDelete={handleDelete} />
+          <CategoryRow
+            category={item}
+            onEdit={openEdit}
+            onDelete={handleDelete}
+            canDelete={item.id !== 'other' && categories.length > 1}
+          />
         )}
         ListEmptyComponent={
           <View style={styles.empty}>

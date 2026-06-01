@@ -392,14 +392,13 @@ class DatabaseService {
 
   async deleteCategory(id: string): Promise<void> {
     const db = this.getDb();
-    // Reassign messages to 'other' category before deleting.
-    // If we are deleting 'other' itself, we let them become NULL (default behavior).
-    if (id !== 'other') {
-      await db.runAsync(
-        `UPDATE snippets SET category_id = 'other' WHERE category_id = ?`,
-        [id]
-      );
+    if (id === 'other') {
+      return;
     }
+    await db.runAsync(
+      `UPDATE snippets SET category_id = 'other' WHERE category_id = ?`,
+      [id]
+    );
     await db.runAsync(`DELETE FROM categories WHERE id = ?`, [id]);
   }
 

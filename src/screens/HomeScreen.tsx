@@ -22,7 +22,7 @@ import { SearchBar } from '../components/common/SearchBar';
 import { useSnippets } from '../hooks/useSnippets';
 import { useCategories } from '../hooks/useCategories';
 import { useRatingPrompt } from '../hooks/useRatingPrompt';
-import { MESSAGE_TEMPLATES } from '../constants';
+import { MESSAGE_TEMPLATES, DEFAULT_CATEGORIES } from '../constants';
 import { textFont } from '../constants/typography';
 import { RootStackParamList, Snippet } from '../types';
 import { useTheme } from '../hooks/useTheme';
@@ -69,6 +69,17 @@ export const HomeScreen: React.FC = () => {
     [activeCategory, categories]
   );
   const existingCategoryIds = useMemo(() => new Set(categories.map(category => category.id)), [categories]);
+  const visibleCategories = categories.length > 0
+    ? categories
+    : [
+        DEFAULT_CATEGORIES.find(cat => cat.id === 'other') ??
+        { id: 'other', name: 'Other', color: '#8B5CF6', icon: 'tag', createdAt: Date.now() },
+      ];
+  const activeCategoryId = activeCategory && existingCategoryIds.has(activeCategory)
+    ? activeCategory
+    : categories.length === 0
+      ? visibleCategories[0].id
+      : null;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -218,8 +229,8 @@ export const HomeScreen: React.FC = () => {
       <View style={styles.headerWrapper}>
         <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search messages..." />
         <CategoryChipBar
-          categories={categories}
-          activeId={activeCategory}
+          categories={visibleCategories}
+          activeId={activeCategoryId}
           isRecentActive={isRecentActive}
           onSelect={filterByCategory}
           onRecent={showRecent}

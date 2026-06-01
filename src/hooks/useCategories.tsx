@@ -24,7 +24,11 @@ export const CategoriesProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const refresh = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await db.getAllCategories();
+      let data = await db.getAllCategories();
+      if (data.length === 0) {
+        const other = await db.createCategory('Other', '#8B5CF6', 'tag');
+        data = [other];
+      }
       setCategories(data);
     } finally {
       setIsLoading(false);
