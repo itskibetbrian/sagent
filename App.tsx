@@ -6,9 +6,6 @@ import { Text, TextInput } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import * as SplashScreen from 'expo-splash-screen';
-
-SplashScreen.preventAutoHideAsync().catch(() => {});
 
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { textFont } from './src/constants/typography';

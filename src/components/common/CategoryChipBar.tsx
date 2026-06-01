@@ -74,7 +74,9 @@ export const CategoryChipBar: React.FC<CategoryChipBarProps> = ({
           style={[styles.manageBtn, { borderColor: theme.border, backgroundColor: theme.surfaceAlt }]}
         >
           <Settings size={14} color={theme.textSecondary} />
-          <Text style={[styles.manageText, { color: theme.textSecondary }]}>Manage</Text>
+          <Text style={[styles.manageText, { color: theme.textSecondary }]}>
+            {categories.length === 0 ? 'Add categories' : 'Manage'}
+          </Text>
         </TouchableOpacity>
       )}
     </ScrollView>

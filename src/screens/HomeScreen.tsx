@@ -215,6 +215,18 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={styles.headerWrapper}>
+        <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search messages..." />
+        <CategoryChipBar
+          categories={categories}
+          activeId={activeCategory}
+          isRecentActive={isRecentActive}
+          onSelect={filterByCategory}
+          onRecent={showRecent}
+          onManage={() => navigation.navigate('ManageCategories')}
+        />
+        <FreeSendIndicator />
+      </View>
 
       <FlatList
         data={gridSnippets}
@@ -226,20 +238,6 @@ export const HomeScreen: React.FC = () => {
         contentContainerStyle={styles.list}
         onRefresh={refresh}
         refreshing={isLoading && snippets.length > 0}
-        ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search messages..." />
-            <CategoryChipBar
-              categories={categories}
-              activeId={activeCategory}
-              isRecentActive={isRecentActive}
-              onSelect={filterByCategory}
-              onRecent={showRecent}
-              onManage={() => navigation.navigate('ManageCategories')}
-            />
-            <FreeSendIndicator />
-          </View>
-        }
         ListEmptyComponent={
           isLoading ? (
             <View style={styles.skeletonGrid}>
@@ -326,6 +324,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'stretch',
+  },
+  headerWrapper: {
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
   },
   listView: {
     flex: 1,
