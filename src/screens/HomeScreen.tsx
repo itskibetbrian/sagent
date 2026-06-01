@@ -8,7 +8,7 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Plus, Sparkles } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,6 +37,7 @@ export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const insets = useSafeAreaInsets();
   const { theme, mode } = useTheme();
+  const isFocused = useIsFocused();
   const {
     snippets,
     isLoading,
@@ -61,7 +62,7 @@ export const HomeScreen: React.FC = () => {
     showRecent,
     isRecentActive,
   } = useSnippets();
-  const { categories } = useCategories();
+  const { categories, refresh: refreshCategories } = useCategories();
   const { triggerPrompt } = useRatingPrompt();
   const gridSnippets = useMemo(() => padGridItems(snippets, NUM_COLUMNS), [snippets]);
   const activeCategoryDetails = useMemo(
@@ -91,11 +92,10 @@ export const HomeScreen: React.FC = () => {
     triggerPrompt();
   }, [triggerPrompt]);
 
-  useFocusEffect(
-    useCallback(() => {
-      void refreshShareUsage();
-    }, [refreshShareUsage])
-  );
+  React.useEffect(() => {
+    if (!isFocused) return;
+    void Promise.all([refreshShareUsage(), refreshCategories()]);
+  }, [isFocused, refreshShareUsage, refreshCategories]);
 
   const handleEdit = useCallback((snippet: Snippet) => {
     navigation.navigate('AddSnippet', { snippetId: snippet.id });

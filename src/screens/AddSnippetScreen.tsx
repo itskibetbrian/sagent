@@ -19,6 +19,7 @@ import { Save, Trash2 } from 'lucide-react-native';
 
 import { useSnippets } from '../hooks/useSnippets';
 import { useCategories } from '../hooks/useCategories';
+import { DEFAULT_CATEGORIES } from '../constants';
 import { RootStackParamList } from '../types';
 import { db } from '../services/database';
 import { useTheme } from '../hooks/useTheme';
@@ -37,9 +38,21 @@ export const AddSnippetScreen: React.FC = () => {
   const { createSnippet, updateSnippet, deleteSnippet } = useSnippets();
   const { categories } = useCategories();
 
+  const categoryItems = categories.length > 0
+    ? categories
+    : [
+        DEFAULT_CATEGORIES.find(cat => cat.id === 'other') ?? {
+          id: 'other',
+          name: 'Other',
+          color: '#8B5CF6',
+          icon: 'tag',
+          createdAt: Date.now(),
+        },
+      ];
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('other');
+  const [selectedCategory, setSelectedCategory] = useState<string>(categoryItems[0]?.id ?? 'other');
   const [isSaving, setIsSaving] = useState(false);
   const [titleError, setTitleError] = useState('');
   const [contentError, setContentError] = useState('');
@@ -55,11 +68,18 @@ export const AddSnippetScreen: React.FC = () => {
         if (s) {
           setTitle(s.title);
           setContent(s.content);
-          setSelectedCategory(s.categoryId ?? 'other');
+          setSelectedCategory(s.categoryId ?? categoryItems[0]?.id ?? 'other');
         }
       });
     }
-  }, [snippetId]);
+  }, [snippetId, categoryItems]);
+
+  useEffect(() => {
+    if (!categoryItems.length) return;
+    if (!categoryItems.some(cat => cat.id === selectedCategory)) {
+      setSelectedCategory(categoryItems[0].id);
+    }
+  }, [categoryItems, selectedCategory]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -194,7 +214,7 @@ export const AddSnippetScreen: React.FC = () => {
 
         <Text style={[styles.label, { color: theme.textSecondary }]}>Category</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
-          {categories.map(cat => (
+          {categoryItems.map(cat => (
             <Pressable
               key={cat.id}
               style={({ pressed }) => [
