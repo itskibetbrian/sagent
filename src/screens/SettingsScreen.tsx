@@ -227,7 +227,7 @@ export const SettingsScreen: React.FC = () => {
                 },
                 {
                   icon: Zap,
-                  title: 'Go Pro Closer',
+                  title: 'Go Pro',
                   description: 'Upgrade to remove the Sagent watermark and unlock unlimited sends and folders.',
                 },
               ].map((item, index, items) => {

@@ -82,6 +82,12 @@ export const HomeScreen: React.FC = () => {
       ? visibleCategories[0].id
       : null;
 
+  React.useEffect(() => {
+    if (activeCategory && !existingCategoryIds.has(activeCategory)) {
+      filterByCategory(null);
+    }
+  }, [activeCategory, existingCategoryIds, filterByCategory]);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: 'Sagent',
@@ -304,7 +310,7 @@ export const HomeScreen: React.FC = () => {
               You've used all 50 free sends
             </Text>
             <Text style={[styles.modalBody, { color: theme.textSecondary }]}>
-              Upgrade to Pro Closer after 50 free sends for unlimited sends and no watermark.
+              Upgrade to Pro after 50 free sends for unlimited sends and no watermark.
             </Text>
             <TouchableOpacity
               style={[styles.modalPrimaryButton, { backgroundColor: theme.primary }]}
@@ -314,7 +320,7 @@ export const HomeScreen: React.FC = () => {
               }}
               activeOpacity={0.85}
             >
-              <Text style={[styles.modalPrimaryText, { color: theme.onPrimary }]}>Upgrade to Pro Closer</Text>
+              <Text style={[styles.modalPrimaryText, { color: theme.onPrimary }]}>Upgrade to Pro</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalSecondaryButton, { borderColor: theme.border, backgroundColor: theme.surfaceAlt }]}

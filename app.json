@@ -28,6 +28,11 @@
       "versionCode": 2,
       "permissions": []
     },
+    "splash": {
+      "image": "./assets/icon.png",
+      "backgroundColor": "#0F0F13",
+      "resizeMode": "contain"
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     },

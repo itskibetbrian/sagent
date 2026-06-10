@@ -44,7 +44,7 @@ export const OnboardingScreen: React.FC = () => {
       body: (
         <View style={styles.guideList}>
           <Text style={[styles.guideLine, { color: theme.text }]}>50 free sends every month to get started</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Pro Closer unlocks unlimited sends and folders</Text>
+          <Text style={[styles.guideLine, { color: theme.text }]}>Pro unlocks unlimited sends and folders</Text>
           <Text style={[styles.guideLine, { color: theme.text }]}>No watermark on premium — pure professionalism</Text>
         </View>
       ),

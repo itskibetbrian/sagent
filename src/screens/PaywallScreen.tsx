@@ -197,9 +197,56 @@ export const PaywallScreen: React.FC = () => {
   const active = plans[plan];
 
   const purchase = () => {
-    Toast.show({ type: 'info', text1: "Coming soon — we'll notify you!" });
-    // TODO: re-enable before production
-    // await nativeBilling.launchPurchase(subscription.productId, offerToken);
+    const subscription = subscriptionsBySku[SUBSCRIPTION_SKUS[plan]];
+    if (!subscription) {
+      Toast.show({ type: 'error', text1: 'Product not available on this device.' });
+      return;
+    }
+
+    const offer = subscription.offers[0];
+    if (!offer) {
+      Toast.show({ type: 'error', text1: 'No offer available for this product.' });
+      return;
+    }
+
+    (async () => {
+      try {
+        if (!nativeBilling.isAvailable()) {
+          Toast.show({ type: 'error', text1: 'Billing is not available on this device.' });
+          return;
+        }
+
+        setIsPurchasing(true);
+        await nativeBilling.launchPurchase(subscription.productId, offer.offerToken);
+        // The native billing listener will handle the success state and unlock premium.
+      } catch (error: any) {
+        Toast.show({ type: 'error', text1: error?.message ?? 'Purchase failed' });
+        setIsPurchasing(false);
+      }
+    })();
+  };
+
+  const restorePurchase = async () => {
+    if (!nativeBilling.isAvailable()) {
+      Toast.show({ type: 'error', text1: 'Billing is not available on this device.' });
+      return;
+    }
+
+    setIsPurchasing(true);
+    try {
+      const state = await syncPremiumStatusFromBilling();
+      if (state?.status === 'subscribed') {
+        Alert.alert('Restore successful', 'Your premium subscription has been restored.');
+        navigation.goBack();
+        return;
+      }
+
+      Toast.show({ type: 'info', text1: 'No active subscription was found.' });
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: error?.message ?? 'Restore failed' });
+    } finally {
+      setIsPurchasing(false);
+    }
   };
 
   if (isCheckingPremium) {
@@ -210,7 +257,7 @@ export const PaywallScreen: React.FC = () => {
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
       <View style={styles.hero}>
         <BrandIcon size={88} />
-        <Text style={[styles.heroTitle, { color: theme.text }]}>Sagent Pro Closer</Text>
+        <Text style={[styles.heroTitle, { color: theme.text }]}>Sagent Pro</Text>
         <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
           Save 4+ Hours a Month.
         </Text>
@@ -282,9 +329,20 @@ export const PaywallScreen: React.FC = () => {
         )}
       </TouchableOpacity>
 
-      <Text style={[styles.finePrint, { color: theme.textSecondary }]}>
-        Sagent Pro Closer. Cancel anytime.
+<TouchableOpacity
+        onPress={() => void restorePurchase()}
+        style={[styles.restoreButton, { borderColor: theme.border }]}
+        activeOpacity={0.85}
+        disabled={isPurchasing}
+      >
+        <Text style={[styles.restoreButtonText, { color: theme.text }]}>Restore purchase</Text>
+      </TouchableOpacity>
+
+      <Text style={[styles.finePrint, { color: theme.textSecondary }]}> 
+        Sagent Pro. Cancel anytime.
       </Text>
+
+
 
       <TouchableOpacity
         onPress={() => navigation.goBack()}
@@ -345,6 +403,14 @@ const styles = StyleSheet.create({
   ctaText: { ...textFont('bold'), fontSize: 17 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   finePrint: { ...textFont('regular'), fontSize: 13, textAlign: 'center', lineHeight: 19, marginBottom: 16 },
+  restoreButton: {
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  restoreButtonText: { ...textFont('semibold'), fontSize: 15 },
   dismiss: {
     position: 'absolute',
     top: 16,
