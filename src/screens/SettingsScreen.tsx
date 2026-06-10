@@ -115,29 +115,6 @@ export const SettingsScreen: React.FC = () => {
     setShowHowTo(true);
   };
 
-  const handleClearAllData = () => {
-    Alert.alert(
-      'Clear all data?',
-      'This will permanently delete all your messages, categories, favorites, and reset the app to its original state. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear everything',
-          style: 'destructive',
-          onPress: async () => {
-            await db.clearAllData();
-            await refresh();
-            await refreshShareUsage();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Onboarding' }],
-            });
-          },
-        },
-      ]
-    );
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -149,7 +126,7 @@ export const SettingsScreen: React.FC = () => {
           >
             <View style={styles.premiumHeader}>
               <Crown size={26} color={theme.onPrimary} />
-              <Text style={[styles.premiumTitle, { color: theme.onPrimary }]}>Upgrade to Pro Closer</Text>
+              <Text style={[styles.premiumTitle, { color: theme.onPrimary }]}>Upgrade to Pro</Text>
             </View>
             <Text style={[styles.premiumSub, { color: `${theme.onPrimary}DD` }]}>
               Stop typing, start closing. Get the full power of Sagent.
@@ -196,26 +173,6 @@ export const SettingsScreen: React.FC = () => {
                 thumbColor={theme.onPrimary}
               />
             }
-          />
-        </Section>
-
-        <Section title="Data">
-          <Row
-            icon={Trash2}
-            iconColor={theme.danger}
-            label="Clear all data"
-            danger
-            onPress={handleClearAllData}
-          />
-        </Section>
-
-        <Section title="Support">
-          <Row
-            icon={Bug}
-            iconColor={theme.primary}
-            label="Report a Bug or Idea"
-            sublabel="Send feedback by email"
-            onPress={() => Linking.openURL('mailto:support@gosagent.com?subject=Sagent%20Bug%20or%20Idea')}
           />
         </Section>
 

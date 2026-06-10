@@ -26,7 +26,7 @@ export const OnboardingScreen: React.FC = () => {
 
   const steps = [
     {
-      title: 'Close deals faster',
+      title: 'Send messages faster',
       subtitle: 'Stop retyping the same messages. Save once, send anywhere in under 10 seconds.',
       accent: theme.primary,
       body: (
@@ -34,18 +34,6 @@ export const OnboardingScreen: React.FC = () => {
           <Text style={[styles.guideLine, { color: theme.text }]}>Price lists, follow-ups, payment links — ready in one tap</Text>
           <Text style={[styles.guideLine, { color: theme.text }]}>Share to WhatsApp, Gmail, SMS — any app instantly</Text>
           <Text style={[styles.guideLine, { color: theme.text }]}>Built for sellers who send the same messages every day</Text>
-        </View>
-      ),
-    },
-    {
-      title: 'Ready to go',
-      subtitle: 'Sagent comes loaded with Sales and Support messages so you can start sending immediately.',
-      accent: theme.success,
-      body: (
-        <View style={styles.guideList}>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Sales: price lists, payment links, thank-yous, follow-ups</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Support: issue received, troubleshooting, resolved updates</Text>
-          <Text style={[styles.guideLine, { color: theme.text }]}>Add your own messages and categories anytime</Text>
         </View>
       ),
     },

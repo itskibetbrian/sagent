@@ -212,7 +212,7 @@ export const PaywallScreen: React.FC = () => {
         <BrandIcon size={88} />
         <Text style={[styles.heroTitle, { color: theme.text }]}>Sagent Pro Closer</Text>
         <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
-          Join the top 1% of closers.
+          Save 4+ Hours a Month.
         </Text>
       </View>
 

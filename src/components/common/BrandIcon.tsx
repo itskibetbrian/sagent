@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, ImageStyle, StyleProp } from 'react-native';
 
-const brandIcon = require('../../../assets/icon.png');
+import brandIcon from '../../../assets/icon.png';
 
 interface BrandIconProps {
   size?: number;
