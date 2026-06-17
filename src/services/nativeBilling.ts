@@ -10,10 +10,17 @@ export type NativeBillingStatus =
   | 'subscribed'
   | 'error';
 
+export interface NativePurchaseInfo {
+  purchaseToken: string;
+  productId: string;
+  isAcknowledged: boolean;
+}
+
 export interface NativeBillingState {
   status: NativeBillingStatus;
   message?: string;
   code?: number;
+  purchases?: NativePurchaseInfo[];
 }
 
 export interface NativeSubscriptionOffer {
@@ -40,6 +47,7 @@ type BillingNativeModule = {
   initialize(): Promise<void>;
   fetchSubscriptions(productIds: string[]): Promise<NativeSubscriptionProduct[]>;
   launchPurchase(productId: string, offerToken: string): Promise<void>;
+  acknowledgePurchase(purchaseToken: string): Promise<void>;
   getCurrentState(): Promise<NativeBillingState>;
   addListener(eventName: string): void;
   removeListeners(count: number): void;
@@ -70,6 +78,11 @@ export const nativeBilling = {
   async launchPurchase(productId: string, offerToken: string): Promise<void> {
     if (!moduleRef) throw new Error('Native billing is not available on this device.');
     await moduleRef.launchPurchase(productId, offerToken);
+  },
+
+  async acknowledgePurchase(purchaseToken: string): Promise<void> {
+    if (!moduleRef) throw new Error('Native billing is not available on this device.');
+    await moduleRef.acknowledgePurchase(purchaseToken);
   },
 
   async getCurrentState(): Promise<NativeBillingState> {

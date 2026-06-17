@@ -15,12 +15,10 @@ import Toast from 'react-native-toast-message';
 import { textFont } from '../constants/typography';
 import { useTheme } from '../hooks/useTheme';
 import { BrandIcon } from '../components/common/BrandIcon';
-import { db } from '../services/database';
-import nativeBilling, {
-  NativeBillingState,
-  NativeSubscriptionProduct,
-} from '../services/nativeBilling';
-import { syncPremiumStatusFromBilling } from '../services/premiumSync';
+import { useAuth } from '../providers/AuthProvider';
+import { useEntitlement } from '../hooks/useEntitlement';
+import { NativeSubscriptionProduct } from '../services/nativeBilling';
+import { useSubscription } from '../hooks/useSubscription';
 
 const BENEFITS = [
   'Reclaim 4+ Hours a Month — stop retyping the same messages. Send any message in under 10 seconds.',
@@ -81,103 +79,43 @@ export const PaywallScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { theme } = useTheme();
   const [plan, setPlan] = useState<PlanKey>('yearly');
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [products, setProducts] = useState<NativeSubscriptionProduct[]>([]);
-  const [, setBillingState] = useState<NativeBillingState>({ status: 'initializing' });
-  const [isCheckingPremium, setIsCheckingPremium] = useState(true);
+  const { user, signInWithGoogleAndLink } = useAuth();
+  const { isPro, loading: isCheckingPremium } = useEntitlement();
+  const [isLinkingAuth, setIsLinkingAuth] = useState(false);
+
+  const {
+    isAvailable,
+    isPurchasing,
+    billingState,
+    products,
+    purchase: launchPurchase,
+    restorePurchases,
+  } = useSubscription(Object.values(SUBSCRIPTION_SKUS));
 
   useEffect(() => {
-    let isMounted = true;
+    if (isCheckingPremium) return;
 
-    (async () => {
-      const isPremium = (await db.getPreference('premium_enabled', 'false')) === 'true';
-      if (!isMounted) {
-        return;
-      }
-
-      if (isPremium) {
+    if (isPro) {
+      // We use settings screen as an example of gated area
         navigation.reset({
           index: 0,
           routes: [{ name: 'Main', params: { screen: 'Settings' } }],
         });
         return;
       }
-
-      setIsCheckingPremium(false);
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [navigation]);
+  }, [isPro, isCheckingPremium, navigation]);
 
   useEffect(() => {
-    if (!nativeBilling.isAvailable() || Platform.OS !== 'android') {
-      return;
+    if (billingState.status === 'subscribed') {
+      Alert.alert(
+        'Premium enabled',
+        `Your plan is now active on this device.`
+      );
+      navigation.goBack();
+    } else if (billingState.status === 'error' && billingState.message) {
+      Toast.show({ type: 'error', text1: billingState.message });
     }
-
-    let isMounted = true;
-    const unsubscribe = nativeBilling.subscribe(async state => {
-      if (!isMounted) {
-        return;
-      }
-
-      setBillingState(state);
-
-      if (state.status === 'subscribed') {
-        try {
-          await db.setPreference('premium_enabled', 'true');
-          await db.setPreference('premium_prompt_seen', 'true');
-          Alert.alert(
-            'Premium enabled',
-            `Your ${plan === 'yearly' ? 'yearly' : 'monthly'} plan is now active on this device.`
-          );
-          navigation.goBack();
-        } catch (error: any) {
-          Alert.alert('Purchase completed', error?.message ?? 'Premium was purchased, but setup did not finish cleanly.');
-        } finally {
-          setIsPurchasing(false);
-        }
-        return;
-      }
-
-      if (state.status === 'error') {
-        setIsPurchasing(false);
-        return;
-      }
-
-      if (state.status === 'ready') {
-        setIsPurchasing(false);
-      }
-    });
-
-    void (async () => {
-      try {
-        const currentState = await syncPremiumStatusFromBilling();
-        if (!currentState) {
-          throw new Error('Native billing is not available on this device.');
-        }
-        if (isMounted) setBillingState(currentState);
-
-        const result = await nativeBilling.fetchSubscriptions(Object.values(SUBSCRIPTION_SKUS));
-        if (result.length === 0) {
-          throw new Error('No subscription products returned from Google Play.');
-        }
-        if (isMounted) setProducts(result);
-      } catch (error: any) {
-        // TODO: remove silent fail before production
-        // Products must exist in Play Console first
-        if (isMounted) {
-          setBillingState({ status: 'error', message: error?.message });
-        }
-      }
-    })();
-
-    return () => {
-      isMounted = false;
-      unsubscribe?.();
-    };
-  }, [navigation, plan]);
+  }, [billingState.status, billingState.message, navigation]);
 
   const subscriptionsBySku = useMemo(() => {
     return products.reduce<Record<string, NativeSubscriptionProduct>>((acc, subscription) => {
@@ -196,7 +134,25 @@ export const PaywallScreen: React.FC = () => {
 
   const active = plans[plan];
 
-  const purchase = () => {
+  const handlePurchase = async () => {
+    // Auth Gate: If user is anonymous, force them to sign in to Google
+    if (user?.isAnonymous) {
+      setIsLinkingAuth(true);
+      try {
+        await signInWithGoogleAndLink();
+      } catch (e) {
+        Toast.show({ type: 'error', text1: 'Sign in failed. Please try again.' });
+        setIsLinkingAuth(false);
+        return;
+      }
+      setIsLinkingAuth(false);
+    }
+
+    if (!isAvailable) {
+      Toast.show({ type: 'error', text1: 'Billing is not available on this device.' });
+      return;
+    }
+
     const subscription = subscriptionsBySku[SUBSCRIPTION_SKUS[plan]];
     if (!subscription) {
       Toast.show({ type: 'error', text1: 'Product not available on this device.' });
@@ -209,43 +165,29 @@ export const PaywallScreen: React.FC = () => {
       return;
     }
 
-    (async () => {
-      try {
-        if (!nativeBilling.isAvailable()) {
-          Toast.show({ type: 'error', text1: 'Billing is not available on this device.' });
-          return;
-        }
-
-        setIsPurchasing(true);
-        await nativeBilling.launchPurchase(subscription.productId, offer.offerToken);
-        // The native billing listener will handle the success state and unlock premium.
-      } catch (error: any) {
-        Toast.show({ type: 'error', text1: error?.message ?? 'Purchase failed' });
-        setIsPurchasing(false);
-      }
-    })();
+    try {
+      await launchPurchase(subscription.productId, offer.offerToken);
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: error?.message ?? 'Purchase failed' });
+    }
   };
 
-  const restorePurchase = async () => {
-    if (!nativeBilling.isAvailable()) {
+  const handleRestore = async () => {
+    if (!isAvailable) {
       Toast.show({ type: 'error', text1: 'Billing is not available on this device.' });
       return;
     }
 
-    setIsPurchasing(true);
     try {
-      const state = await syncPremiumStatusFromBilling();
-      if (state?.status === 'subscribed') {
+      await restorePurchases();
+      if (billingState.status === 'subscribed') {
         Alert.alert('Restore successful', 'Your premium subscription has been restored.');
         navigation.goBack();
-        return;
+      } else {
+        Toast.show({ type: 'info', text1: 'No active subscription was found.' });
       }
-
-      Toast.show({ type: 'info', text1: 'No active subscription was found.' });
     } catch (error: any) {
       Toast.show({ type: 'error', text1: error?.message ?? 'Restore failed' });
-    } finally {
-      setIsPurchasing(false);
     }
   };
 
@@ -310,27 +252,32 @@ export const PaywallScreen: React.FC = () => {
       <TouchableOpacity
         style={[
           styles.cta,
-          { backgroundColor: theme.primary, shadowColor: theme.primary },
-          isPurchasing && styles.ctaDisabled,
-        ]}
-        onPress={() => void purchase()}
-        disabled={isPurchasing}
-        activeOpacity={0.85}
-      >
-        {isPurchasing ? (
-          <View style={styles.loadingRow}>
+        { backgroundColor: theme.primary, shadowColor: theme.primary },
+        (isPurchasing || isLinkingAuth) && styles.ctaDisabled,
+      ]}
+      onPress={() => void handlePurchase()}
+      disabled={isPurchasing || isLinkingAuth}
+      activeOpacity={0.85}
+    >
+      {isLinkingAuth ? (
+        <View style={styles.loadingRow}>
+          <LoaderCircle size={18} color={theme.onPrimary} style={{ transform: [{ rotate: '0deg' }] }} />
+          <Text style={[styles.ctaText, { color: theme.onPrimary }]}>Signing In...</Text>
+        </View>
+      ) : isPurchasing ? (
+        <View style={styles.loadingRow}>
             <LoaderCircle size={18} color={theme.onPrimary} style={{ transform: [{ rotate: '0deg' }] }} />
             <Text style={[styles.ctaText, { color: theme.onPrimary }]}>Processing...</Text>
           </View>
-        ) : (
-          <Text style={[styles.ctaText, { color: theme.onPrimary }]}>
-            Start {active.label} — {active.price}{active.period}
-          </Text>
-        )}
-      </TouchableOpacity>
+      ) : (
+        <Text style={[styles.ctaText, { color: theme.onPrimary }]}>
+          {user?.isAnonymous ? `Sign in to Start ${active.label}` : `Start ${active.label} — ${active.price}${active.period}`}
+        </Text>
+      )}
+    </TouchableOpacity>
 
 <TouchableOpacity
-        onPress={() => void restorePurchase()}
+        onPress={() => void handleRestore()}
         style={[styles.restoreButton, { borderColor: theme.border }]}
         activeOpacity={0.85}
         disabled={isPurchasing}

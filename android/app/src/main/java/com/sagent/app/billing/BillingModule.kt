@@ -144,6 +144,21 @@ class BillingModule(
     }
 
     @ReactMethod
+    fun acknowledgePurchase(purchaseToken: String, promise: Promise) {
+        moduleScope.launch {
+            val result = billingManager.acknowledgePurchase(purchaseToken)
+            result.fold(
+                onSuccess = { promise.resolve(null) },
+                onFailure = { error ->
+                    val state = billingManager.billingState.value
+                    val code = (state as? BillingState.Error)?.code ?: -1
+                    promise.reject("BILLING_ACK_FAILED", error.message, billingErrorMap(error.message, code))
+                }
+            )
+        }
+    }
+
+    @ReactMethod
     fun getCurrentState(promise: Promise) {
         promise.resolve(stateToWritableMap(billingManager.billingState.value))
     }
@@ -195,8 +210,18 @@ class BillingModule(
             BillingState.Purchasing -> {
                 putString("status", "purchasing")
             }
-            BillingState.Subscribed -> {
+            is BillingState.Subscribed -> {
                 putString("status", "subscribed")
+                val purchasesArray = Arguments.createArray()
+                state.purchases.forEach { purchase ->
+                    val map = Arguments.createMap().apply {
+                        putString("purchaseToken", purchase.purchaseToken)
+                        putString("productId", purchase.productId)
+                        putBoolean("isAcknowledged", purchase.isAcknowledged)
+                    }
+                    purchasesArray.pushMap(map)
+                }
+                putArray("purchases", purchasesArray)
             }
             is BillingState.Error -> {
                 putString("status", "error")

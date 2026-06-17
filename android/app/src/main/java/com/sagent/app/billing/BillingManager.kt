@@ -30,11 +30,13 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
+data class PurchaseInfo(val purchaseToken: String, val productId: String, val isAcknowledged: Boolean)
+
 sealed class BillingState {
     data object Initializing : BillingState()
     data object Ready : BillingState()
     data object Purchasing : BillingState()
-    data object Subscribed : BillingState()
+    data class Subscribed(val purchases: List<PurchaseInfo> = emptyList()) : BillingState()
     data class Error(val message: String, val code: Int) : BillingState()
 }
 
@@ -285,39 +287,22 @@ class BillingManager(
             return
         }
 
-        for (purchase in purchasedItems) {
-            val result = acknowledgePurchase(purchase)
-            if (result.isFailure) {
-                val error = result.exceptionOrNull() as? BillingException
-                _billingState.value = BillingState.Error(
-                    message = error?.message ?: "Failed to acknowledge purchase.",
-                    code = error?.code ?: BillingResponseCode.ERROR
-                )
-                return
-            }
+        val purchaseInfoList = purchasedItems.map { purchase ->
+            PurchaseInfo(
+                purchaseToken = purchase.purchaseToken,
+                productId = purchase.products.firstOrNull() ?: "",
+                isAcknowledged = purchase.isAcknowledged
+            )
         }
 
-        _billingState.value = BillingState.Subscribed
+        _billingState.value = BillingState.Subscribed(purchaseInfoList)
     }
 
-    private suspend fun acknowledgePurchase(purchase: Purchase): Result<Unit> =
+    suspend fun acknowledgePurchase(purchaseToken: String): Result<Unit> =
         withContext(ioDispatcher) {
-            if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) {
-                return@withContext Result.failure(
-                    BillingException(
-                        message = "Purchase is not in PURCHASED state.",
-                        code = BillingResponseCode.ERROR
-                    )
-                )
-            }
-
-            if (purchase.isAcknowledged) {
-                return@withContext Result.success(Unit)
-            }
-
             suspendCancellableCoroutine { continuation ->
                 val params = AcknowledgePurchaseParams.newBuilder()
-                    .setPurchaseToken(purchase.purchaseToken)
+                    .setPurchaseToken(purchaseToken)
                     .build()
 
                 billingClient.acknowledgePurchase(params) { billingResult ->
