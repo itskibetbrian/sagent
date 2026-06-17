@@ -95,10 +95,9 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
             const data = await response.json();
 
             // 2. If valid, unlock premium and acknowledge
-              // We rely on Firestore listener for actual entitlement state, 
-              // but we can acknowledge the purchase natively.
-              await nativeBilling.acknowledgePurchase(purchase.purchaseToken);
-            }
+            // We rely on Firestore listener for actual entitlement state, 
+            // but we can acknowledge the purchase natively.
+            await nativeBilling.acknowledgePurchase(purchase.purchaseToken);
           } catch (error) {
             console.error('Failed to verify purchase with backend:', error);
             // Optional: Handle retry logic or alert user
