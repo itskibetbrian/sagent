@@ -43,8 +43,8 @@ interface PlanConfig {
 }
 
 const FALLBACK_PLANS: Record<PlanKey, PlanConfig> = {
-  monthly: { label: 'Monthly', price: '$9.99', period: '/month' },
-  yearly: { label: 'Yearly', price: '$89.99', period: '/year', badge: 'Save 25%' },
+  monthly: { label: 'Monthly', price: '...', period: '' },
+  yearly: { label: 'Yearly', price: '...', period: '', badge: 'Save 25%' },
 };
 
 const getPeriodLabel = (billingPeriod?: string | null, planKey?: PlanKey): string | null => {
@@ -71,7 +71,7 @@ const getPlanFromSubscription = (
   return {
     ...fallback,
     price: phase?.formattedPrice ?? fallback.price,
-    period: getPeriodLabel(phase?.billingPeriod, fallback.label.toLowerCase() as PlanKey) ?? fallback.period,
+    period: getPeriodLabel(phase?.billingPeriod, fallback.label.toLowerCase() as PlanKey) ?? (phase?.formattedPrice ? (fallback.label === 'Monthly' ? '/month' : '/year') : fallback.period),
   };
 };
 
@@ -271,7 +271,11 @@ export const PaywallScreen: React.FC = () => {
           </View>
       ) : (
         <Text style={[styles.ctaText, { color: theme.onPrimary }]}>
-          {user?.isAnonymous ? `Sign in to Start ${active.label}` : `Start ${active.label} — ${active.price}${active.period}`}
+          {user?.isAnonymous 
+            ? `Sign in to Start ${active.label}` 
+            : active.price === '...' 
+              ? `Start ${active.label}` 
+              : `Start ${active.label} — ${active.price}${active.period}`}
         </Text>
       )}
     </TouchableOpacity>
