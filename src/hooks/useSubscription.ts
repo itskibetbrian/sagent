@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
 import nativeBilling, { NativeBillingState, NativeSubscriptionProduct } from '../services/nativeBilling';
 import auth from '@react-native-firebase/auth';
+import {
+  getUserFacingBillingMessage,
+  PURCHASE_VERIFICATION_FALLBACK,
+  BillingResponseCode,
+} from '../utils/billingErrors';
 
 // Replace with your actual backend URL when deploying
 const BACKEND_VERIFY_URL = 'https://your-backend.com/api/verify-purchase';
@@ -15,6 +20,30 @@ export interface UseSubscriptionResult {
   restorePurchases: () => Promise<void>;
 }
 
+/**
+ * Sanitise a NativeBillingState error so that the `message` field
+ * contains only a user-safe string. The raw native message is logged
+ * to console.error for debugging.
+ */
+function sanitiseBillingError(state: NativeBillingState): NativeBillingState {
+  if (state.status !== 'error') return state;
+
+  // Log the raw native message for devs
+  console.error('[Billing] Native error:', { message: state.message, code: state.code });
+
+  // USER_CANCELED → silently reset to ready (no error state at all)
+  if (state.code === BillingResponseCode.USER_CANCELED) {
+    return { status: 'ready' };
+  }
+
+  const userMessage = getUserFacingBillingMessage(state.code);
+  return {
+    ...state,
+    // userMessage is null only for USER_CANCELED, which is handled above
+    message: userMessage ?? undefined,
+  };
+}
+
 export function useSubscription(skus: string[]): UseSubscriptionResult {
   const [billingState, setBillingState] = useState<NativeBillingState>({ status: 'initializing' });
   const [products, setProducts] = useState<NativeSubscriptionProduct[]>([]);
@@ -23,7 +52,7 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
   // Initialize and fetch subscriptions
   useEffect(() => {
     if (!nativeBilling.isAvailable() || Platform.OS !== 'android') {
-      setBillingState({ status: 'error', message: 'Billing not available on this platform' });
+      setBillingState({ status: 'error', message: 'Billing is not available on this device.' });
       return;
     }
 
@@ -33,12 +62,19 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
       try {
         await nativeBilling.initialize();
         const currentState = await nativeBilling.getCurrentState();
-        if (isMounted) setBillingState(currentState);
+        if (isMounted) setBillingState(sanitiseBillingError(currentState));
 
         const fetchedProducts = await nativeBilling.fetchSubscriptions(skus);
         if (isMounted) setProducts(fetchedProducts);
       } catch (error: any) {
-        if (isMounted) setBillingState({ status: 'error', message: error?.message });
+        console.error('[Billing] Setup failed:', error);
+        if (isMounted) {
+          const userMessage = getUserFacingBillingMessage(error?.code);
+          setBillingState({
+            status: 'error',
+            message: userMessage ?? 'Something went wrong. Please try again, or contact support.',
+          });
+        }
       }
     };
 
@@ -57,9 +93,12 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
 
     const unsubscribe = nativeBilling.subscribe(async (state) => {
       if (!isMounted) return;
-      setBillingState(state);
 
-      if (state.status === 'error' || state.status === 'ready') {
+      // Sanitise before exposing to UI
+      const safeState = sanitiseBillingError(state);
+      setBillingState(safeState);
+
+      if (safeState.status === 'error' || safeState.status === 'ready') {
         setIsPurchasing(false);
       }
 
@@ -89,6 +128,12 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
             });
 
             if (!response.ok) {
+              // Log the raw HTTP details for devs only
+              console.error('[Billing] Backend verification failed:', {
+                status: response.status,
+                statusText: response.statusText,
+                productId: purchase.productId,
+              });
               throw new Error('Backend verification failed');
             }
 
@@ -99,8 +144,14 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
             // but we can acknowledge the purchase natively.
             await nativeBilling.acknowledgePurchase(purchase.purchaseToken);
           } catch (error) {
-            console.error('Failed to verify purchase with backend:', error);
-            // Optional: Handle retry logic or alert user
+            console.error('[Billing] Purchase verification/acknowledgement error:', error);
+            // Surface a generic, user-safe fallback
+            if (isMounted) {
+              setBillingState({
+                status: 'error',
+                message: PURCHASE_VERIFICATION_FALLBACK,
+              });
+            }
           }
         }
 
@@ -123,8 +174,17 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
       await nativeBilling.launchPurchase(productId, offerToken);
       // The listener above will handle the rest of the flow
     } catch (error: any) {
+      console.error('[Billing] launchPurchase error:', error);
       setIsPurchasing(false);
-      throw error;
+
+      // Map native error code to user-friendly message
+      const code = error?.code ?? error?.userInfo?.code;
+      const userMessage = getUserFacingBillingMessage(code);
+
+      // USER_CANCELED → null → silent return (no throw)
+      if (userMessage === null) return;
+
+      throw new Error(userMessage);
     }
   }, []);
 
@@ -141,9 +201,16 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
         // If there are purchases, verify them via backend logic again if needed,
         // or just rely on the listener logic picking them up.
       }
-      setBillingState(state);
+      setBillingState(sanitiseBillingError(state));
     } catch (error: any) {
-      throw error;
+      console.error('[Billing] restorePurchases error:', error);
+
+      const code = error?.code ?? error?.userInfo?.code;
+      const userMessage = getUserFacingBillingMessage(code);
+
+      if (userMessage === null) return;
+
+      throw new Error(userMessage);
     } finally {
       setIsPurchasing(false);
     }

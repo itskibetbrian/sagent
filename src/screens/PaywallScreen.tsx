@@ -19,6 +19,7 @@ import { useAuth } from '../providers/AuthProvider';
 import { useEntitlement } from '../hooks/useEntitlement';
 import { NativeSubscriptionProduct } from '../services/nativeBilling';
 import { useSubscription } from '../hooks/useSubscription';
+import { BillingResponseCode } from '../utils/billingErrors';
 
 const BENEFITS = [
   'Reclaim 4+ Hours a Month — stop retyping the same messages. Send any message in under 10 seconds.',
@@ -112,8 +113,14 @@ export const PaywallScreen: React.FC = () => {
         `Your plan is now active on this device.`
       );
       navigation.goBack();
-    } else if (billingState.status === 'error' && billingState.message) {
-      Toast.show({ type: 'error', text1: billingState.message });
+    } else if (billingState.status === 'error') {
+      // USER_CANCELED is already suppressed upstream (useSubscription resets to 'ready'),
+      // but guard here as well in case a raw state slips through.
+      if (billingState.code === BillingResponseCode.USER_CANCELED) return;
+
+      if (billingState.message) {
+        Toast.show({ type: 'error', text1: billingState.message });
+      }
     }
   }, [billingState.status, billingState.message, navigation]);
 
@@ -168,7 +175,8 @@ export const PaywallScreen: React.FC = () => {
     try {
       await launchPurchase(subscription.productId, offer.offerToken);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: error?.message ?? 'Purchase failed' });
+      // error.message is already user-safe (mapped by useSubscription)
+      Toast.show({ type: 'error', text1: error?.message ?? 'Purchase failed. Please try again.' });
     }
   };
 
@@ -187,7 +195,8 @@ export const PaywallScreen: React.FC = () => {
         Toast.show({ type: 'info', text1: 'No active subscription was found.' });
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: error?.message ?? 'Restore failed' });
+      // error.message is already user-safe (mapped by useSubscription)
+      Toast.show({ type: 'error', text1: error?.message ?? 'Restore failed. Please try again.' });
     }
   };
 
