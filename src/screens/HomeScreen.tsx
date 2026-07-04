@@ -59,8 +59,6 @@ export const HomeScreen: React.FC = () => {
     refreshShareUsage,
     dismissPremiumPrompt,
     refresh,
-    showRecent,
-    isRecentActive,
   } = useSnippets();
   const { categories, refresh: refreshCategories } = useCategories();
   const { triggerPrompt } = useRatingPrompt();
@@ -157,18 +155,14 @@ export const HomeScreen: React.FC = () => {
     const fallbackTemplates = templates.length > 0 ? templates : MESSAGE_TEMPLATES.slice(0, 3);
     const title = hasSearch
       ? 'No results found'
-      : isRecentActive
-        ? 'No recent sends yet'
-        : categoryName
-          ? `No ${categoryName} messages yet`
-          : 'No messages yet';
+      : categoryName
+        ? `No ${categoryName} messages yet`
+        : 'No messages yet';
     const subtitle = hasSearch
       ? 'Search checks titles, message text, and category names.'
-      : isRecentActive
-        ? 'Copy or share a message and it will appear here.'
-        : categoryName
-          ? `Start with a ${categoryName.toLowerCase()} template or add your own.`
-          : 'Start from a template or tap + to write your own.';
+      : categoryName
+        ? `Start with a ${categoryName.toLowerCase()} template or add your own.`
+        : 'Start from a template or tap + to write your own.';
 
     return (
       <View style={styles.empty}>
@@ -185,8 +179,7 @@ export const HomeScreen: React.FC = () => {
             <Text style={[styles.emptyButtonText, { color: theme.onPrimary }]}>Clear search</Text>
           </TouchableOpacity>
         ) : (
-          !isRecentActive && (
-            <View style={styles.templateList}>
+          <View style={styles.templateList}>
               {fallbackTemplates.map(template => (
                 <TouchableOpacity
                   key={template.id}
@@ -201,7 +194,6 @@ export const HomeScreen: React.FC = () => {
                 </TouchableOpacity>
               ))}
             </View>
-          )
         )}
       </View>
     );
@@ -237,9 +229,7 @@ export const HomeScreen: React.FC = () => {
         <CategoryChipBar
           categories={visibleCategories}
           activeId={activeCategoryId}
-          isRecentActive={isRecentActive}
           onSelect={filterByCategory}
-          onRecent={showRecent}
           onManage={() => navigation.navigate('ManageCategories')}
         />
         <FreeSendIndicator />

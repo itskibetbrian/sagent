@@ -27,6 +27,8 @@ import {
   Clipboard,
   Edit2,
   X,
+  Save,
+  Tag,
 } from 'lucide-react-native';
 import { db } from '../services/database';
 import { textFont } from '../constants/typography';
@@ -211,24 +213,29 @@ export const SettingsScreen: React.FC = () => {
             <View style={styles.howToList}>
               {[
                 {
-                  icon: Share2,
-                  title: 'Send a message',
-                  description: 'Tap any message card to open the share sheet — send to WhatsApp, Gmail, SMS, or any app instantly.',
+                  icon: Save,
+                  title: 'Save any repetitive message',
+                  description: 'Price lists, welcome message, your website link instructions you send often, your address, payment link, sales and support message or any business or personal message you send often.',
                 },
                 {
-                  icon: Clipboard,
-                  title: 'Copy quietly',
-                  description: 'Tap the clipboard icon on a card to copy without opening the share sheet. No interruption to your flow.',
+                  icon: Share2,
+                  title: 'Send with just a tap on it',
+                  description: 'By clicking a message block you can send it anywhere: Whatsapp, Gmail, text, etc. 50 free for everyone.',
                 },
                 {
                   icon: Edit2,
                   title: 'Edit a message',
-                  description: 'Long-press any message card to edit the title, content, or category.',
+                  description: 'By long clicking a message block you can edit it and change its contents.',
+                },
+                {
+                  icon: Tag,
+                  title: 'Categories',
+                  description: 'In the top of the menu you can add or delete categories by clicking ‘Manage’ at the top after the existing categories. Hereby you can make new ones. To add a category to a message: click the message then at the bottom click on a category. Now the message belongs to the category.',
                 },
                 {
                   icon: Zap,
-                  title: 'Go Pro',
-                  description: 'Upgrade to remove the Sagent watermark and unlock unlimited sends and folders.',
+                  title: 'Go pro',
+                  description: 'Remove our branding and send un limited message to your customers.',
                 },
               ].map((item, index, items) => {
                 const Icon = item.icon;

@@ -46,11 +46,9 @@ interface UseSnippetsReturn {
   dismissPremiumPrompt: () => Promise<void>;
   refresh: () => Promise<void>;
   filterByCategory: (categoryId: string | null) => void;
-  showRecent: () => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   activeCategory: string | null;
-  isRecentActive: boolean;
 }
 
 const SnippetsContext = createContext<UseSnippetsReturn | null>(null);
@@ -62,7 +60,6 @@ export const SnippetsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [isRecentActive, setIsRecentActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [premiumPromptVisible, setPremiumPromptVisible] = useState(false);
   const [premiumPromptReason, setPremiumPromptReason] = useState<PremiumPromptReason>('share-limit');
@@ -74,11 +71,7 @@ export const SnippetsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     let filtered = allSnippets;
 
-    if (isRecentActive) {
-      filtered = filtered
-        .filter(s => s.useCount > 0)
-        .sort((a, b) => (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0));
-    } else if (activeCategory) {
+    if (activeCategory) {
       filtered = filtered.filter(s => s.categoryId === activeCategory);
     }
 
@@ -93,7 +86,7 @@ export const SnippetsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     setSnippets(filtered);
-  }, [activeCategory, allSnippets, isRecentActive, searchQuery]);
+  }, [activeCategory, allSnippets, searchQuery]);
 
   useEffect(() => () => {
     if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
@@ -270,13 +263,7 @@ export const SnippetsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [runHaptic]);
 
   const filterByCategory = useCallback((categoryId: string | null) => {
-    setIsRecentActive(false);
     setActiveCategory(categoryId);
-  }, []);
-
-  const showRecent = useCallback(() => {
-    setActiveCategory(null);
-    setIsRecentActive(true);
   }, []);
 
   const dismissPremiumPrompt = useCallback(async () => {
@@ -304,11 +291,9 @@ export const SnippetsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     dismissPremiumPrompt,
     refresh,
     filterByCategory,
-    showRecent,
     searchQuery,
     setSearchQuery,
     activeCategory,
-    isRecentActive,
   }), [
     activeCategory,
     copiedId,
@@ -317,10 +302,10 @@ export const SnippetsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     deleteSnippet,
     deleteAllSnippets,
     dismissPremiumPrompt,
-    error,
     filterByCategory,
-    showRecent,
-    isRecentActive,
+    searchQuery,
+    setSearchQuery,
+    error,
     isPremium,
     isLoading,
     monthlyShareCount,

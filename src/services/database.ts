@@ -94,55 +94,31 @@ class DatabaseService {
     }
 
     const now = Date.now();
-    const examples: Array<SnippetInsert & { id: string; categoryId: string }> = [
+    const examples: Array<SnippetInsert & { id: string; categoryId: string | null }> = [
       {
         id: `${now.toString(36)}-example-price-list`,
         title: 'Price List',
         content: "Hi! Here's our current price list. Let me know which option works best for you and I'll get you sorted right away.",
-        categoryId: 'sales',
+        categoryId: null,
       },
       {
-        id: `${(now + 1).toString(36)}-example-payment-link`,
+        id: `${(now + 1).toString(36)}-example-welcome`,
+        title: 'Welcome Message',
+        content: 'Welcome! We are thrilled to have you here. Let us know if you need any help getting started.',
+        categoryId: null,
+      },
+      {
+        id: `${(now + 2).toString(36)}-example-payment-link`,
         title: 'Payment Link',
         content: 'Please use the link below to complete your payment. Reach out if you run into any issues — happy to help!',
-        categoryId: 'sales',
+        categoryId: null,
       },
       {
-        id: `${(now + 2).toString(36)}-example-thank-you`,
-        title: 'Thank You',
-        content: 'Thank you so much for your order! We really appreciate your support and will keep you updated every step of the way.',
-        categoryId: 'sales',
-      },
-      {
-        id: `${(now + 3).toString(36)}-example-follow-up`,
-        title: 'Follow-up',
-        content: "Hi! Just checking in to see if you had any questions about what we discussed. I'm here whenever you're ready.",
-        categoryId: 'sales',
-      },
-      {
-        id: `${(now + 4).toString(36)}-example-faq`,
-        title: 'FAQ',
-        content: 'Great question! Here are the answers to the questions we get most often. Let me know if anything needs more detail.',
-        categoryId: 'sales',
-      },
-      {
-        id: `${(now + 5).toString(36)}-example-issue-received`,
-        title: 'Issue Received',
-        content: "Thanks for reaching out! I've logged your issue and our team is already looking into it. We'll update you within 24 hours.",
-        categoryId: 'support',
-      },
-      {
-        id: `${(now + 6).toString(36)}-example-troubleshooting-steps`,
-        title: 'Troubleshooting Steps',
-        content: "Let's get this sorted. Please try these steps: 1) Restart the app, 2) Check your connection, 3) Clear your cache. Still stuck? Reply here and I'll escalate immediately.",
-        categoryId: 'support',
-      },
-      {
-        id: `${(now + 7).toString(36)}-example-resolved`,
-        title: 'Resolved',
-        content: 'Great news — your issue has been resolved! Please let us know if anything else comes up. Always happy to help.',
-        categoryId: 'support',
-      },
+        id: `${(now + 3).toString(36)}-example-sagent`,
+        title: 'Sagent App',
+        content: 'Try Sagent for saving and sending the messages you reuse every day: https://play.google.com/store/apps/details?id=com.sagent.app',
+        categoryId: null,
+      }
     ];
 
     for (const [index, snippet] of examples.entries()) {

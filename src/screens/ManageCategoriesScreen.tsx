@@ -105,7 +105,7 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, onEdit, onDelete, c
 interface EditorModalProps {
   visible: boolean;
   initial: Partial<Category> | null;
-  onSave: (name: string, color: string, icon: string) => void;
+  onSave: (name: string, color: string, icon: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -115,16 +115,24 @@ const EditorModal: React.FC<EditorModalProps> = ({ visible, initial, onSave, onC
   const [color, setColor] = useState(initial?.color ?? CATEGORY_COLORS[0]);
   const [icon, setIcon] = useState(initial?.icon ?? 'tag');
 
+  const [isSaving, setIsSaving] = useState(false);
+
   // Sync when the modal opens for a different category
   React.useEffect(() => {
     setName(initial?.name ?? '');
     setColor(initial?.color ?? CATEGORY_COLORS[0]);
     setIcon(initial?.icon ?? 'tag');
+    setIsSaving(false);
   }, [initial, visible]);
 
-  const handleSave = () => {
-    if (!name.trim()) return;
-    onSave(name.trim(), color, icon);
+  const handleSave = async () => {
+    if (!name.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      await onSave(name.trim(), color, icon);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const SelectedIcon = ICONS[icon] ?? Tag;
@@ -210,9 +218,9 @@ const EditorModal: React.FC<EditorModalProps> = ({ visible, initial, onSave, onC
 
           {/* Save button */}
           <TouchableOpacity
-            style={[modal.saveBtn, { backgroundColor: theme.primary }, !name.trim() && modal.saveBtnDisabled]}
-            onPress={handleSave}
-            disabled={!name.trim()}
+            style={[modal.saveBtn, { backgroundColor: theme.primary }, (!name.trim() || isSaving) && modal.saveBtnDisabled]}
+            onPress={() => void handleSave()}
+            disabled={!name.trim() || isSaving}
           >
             <Check size={18} color={theme.onPrimary} strokeWidth={2.5} />
             <Text style={[modal.saveBtnText, { color: theme.onPrimary }]}>Save Category</Text>

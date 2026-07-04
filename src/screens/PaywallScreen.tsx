@@ -113,16 +113,8 @@ export const PaywallScreen: React.FC = () => {
         `Your plan is now active on this device.`
       );
       navigation.goBack();
-    } else if (billingState.status === 'error') {
-      // USER_CANCELED is already suppressed upstream (useSubscription resets to 'ready'),
-      // but guard here as well in case a raw state slips through.
-      if (billingState.code === BillingResponseCode.USER_CANCELED) return;
-
-      if (billingState.message) {
-        Toast.show({ type: 'error', text1: billingState.message });
-      }
     }
-  }, [billingState.status, billingState.message, navigation]);
+  }, [billingState.status, navigation]);
 
   const subscriptionsBySku = useMemo(() => {
     return products.reduce<Record<string, NativeSubscriptionProduct>>((acc, subscription) => {

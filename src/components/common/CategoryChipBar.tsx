@@ -17,18 +17,14 @@ import { textFont } from '../../constants/typography';
 interface CategoryChipBarProps {
   categories: Category[];
   activeId: string | null;
-  isRecentActive?: boolean;
   onSelect: (id: string | null) => void;
-  onRecent?: () => void;
   onManage?: () => void;
 }
 
 export const CategoryChipBar: React.FC<CategoryChipBarProps> = ({
   categories,
   activeId,
-  isRecentActive = false,
   onSelect,
-  onRecent,
   onManage,
 }) => {
   const { theme } = useTheme();
@@ -43,26 +39,16 @@ export const CategoryChipBar: React.FC<CategoryChipBarProps> = ({
       <Chip
         label="All"
         color={theme.primary}
-        isActive={!isRecentActive && activeId === null}
+        isActive={activeId === null}
         onPress={() => onSelect(null)}
         theme={theme}
       />
-      {onRecent && (
-        <Chip
-          label="Recent"
-          color={theme.success}
-          isActive={isRecentActive}
-          onPress={onRecent}
-          theme={theme}
-          icon={Clock3}
-        />
-      )}
       {categories.map(cat => (
         <Chip
           key={cat.id}
           label={cat.name}
           color={cat.color}
-          isActive={!isRecentActive && activeId === cat.id}
+          isActive={activeId === cat.id}
           onPress={() => onSelect(cat.id)}
           theme={theme}
         />

@@ -26,39 +26,27 @@ export const FREE_TIER_LIMIT = 10;
 
 export const MESSAGE_TEMPLATES = [
   {
-    id: 'sales-follow-up',
-    title: 'Quote Follow-up',
-    content: "Hi! Just checking in on the quote I sent over. I'm happy to answer any questions or adjust the options if needed.",
+    id: 'example-price-list',
+    title: 'Price List',
+    content: "Hi! Here's our current price list. Let me know which option works best for you and I'll get you sorted right away.",
     categoryId: 'sales',
   },
   {
-    id: 'sales-payment-reminder',
-    title: 'Payment Reminder',
-    content: 'Hi! This is a friendly reminder that your payment is still pending. Please let me know once it has been sent, or if you need the payment details again.',
-    categoryId: 'sales',
-  },
-  {
-    id: 'support-reply',
-    title: 'Support Reply',
-    content: "Thanks for reaching out. I've received your message and will look into this right away. I'll update you as soon as I have more information.",
+    id: 'example-welcome',
+    title: 'Welcome Message',
+    content: 'Welcome! We are thrilled to have you here. Let us know if you need any help getting started.',
     categoryId: 'support',
   },
   {
-    id: 'operations-delivery-update',
-    title: 'Delivery Update',
-    content: 'Hi! Your order is being processed and we will share the delivery update as soon as it is ready. Thanks for your patience.',
-    categoryId: 'operations',
-  },
-  {
-    id: 'finance-payment-confirmed',
-    title: 'Payment Confirmed',
-    content: 'Payment received, thank you. We have updated your order and will proceed with the next step.',
+    id: 'example-payment-link',
+    title: 'Payment Link',
+    content: 'Please use the link below to complete your payment. Reach out if you run into any issues — happy to help!',
     categoryId: 'finance',
   },
   {
-    id: 'marketing-appointment-confirmation',
-    title: 'Appointment Confirmation',
-    content: 'Hi! Confirming your appointment for the agreed time. Please reply if anything changes before then.',
+    id: 'example-sagent',
+    title: 'Sagent App',
+    content: 'Try Sagent for saving and sending the messages you reuse every day: https://play.google.com/store/apps/details?id=com.sagent.app',
     categoryId: 'marketing',
   },
 ];

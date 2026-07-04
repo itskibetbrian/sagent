@@ -29,7 +29,7 @@
       "permissions": []
     },
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/splash.png",
       "backgroundColor": "#0F0F13",
       "resizeMode": "contain"
     },
