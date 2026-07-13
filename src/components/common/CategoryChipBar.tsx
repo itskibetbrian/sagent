@@ -9,7 +9,7 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
-import { Clock3, Settings } from 'lucide-react-native';
+import { Settings } from 'lucide-react-native';
 import { Category } from '../../types';
 import { useTheme } from '../../hooks/useTheme';
 import { textFont } from '../../constants/typography';
@@ -85,9 +85,9 @@ const Chip: React.FC<ChipProps> = ({ label, color, isActive, onPress, theme, ico
       isActive
         ? { backgroundColor: theme.primary, borderColor: theme.primary }
         : {
-            backgroundColor: pressed ? theme.surface : theme.surfaceAlt,
-            borderColor: pressed ? color : theme.border,
-          },
+          backgroundColor: pressed ? theme.surface : theme.surfaceAlt,
+          borderColor: pressed ? color : theme.border,
+        },
       pressed && !isActive && styles.chipPressed,
     ]}
     onPress={onPress}

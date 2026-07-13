@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   KeyboardAvoidingView,
-  Platform,
   Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -41,14 +40,14 @@ export const AddSnippetScreen: React.FC = () => {
   const categoryItems = categories.length > 0
     ? categories
     : [
-        DEFAULT_CATEGORIES.find(cat => cat.id === 'other') ?? {
-          id: 'other',
-          name: 'Other',
-          color: '#8B5CF6',
-          icon: 'tag',
-          createdAt: Date.now(),
-        },
-      ];
+      DEFAULT_CATEGORIES.find(cat => cat.id === 'other') ?? {
+        id: 'other',
+        name: 'Other',
+        color: '#8B5CF6',
+        icon: 'tag',
+        createdAt: Date.now(),
+      },
+    ];
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -57,20 +56,21 @@ export const AddSnippetScreen: React.FC = () => {
   const [titleError, setTitleError] = useState('');
   const [contentError, setContentError] = useState('');
 
-  const normalizedContent = content.replace(/[\s-]/g, '');
-  const hasCardNumber = /\b\d{13,19}\b/.test(normalizedContent);
-  const hasSensitiveCredentialHint = /(password|passcode|otp|2fa|secret|api key|token)/i.test(content);
+  const hasCardNumber = /^\d{13,19}$/.test(content.replace(/[\s-]/g, ''));
+  const hasSensitiveCredentialHint = /\b(password|passcode|otp|2fa|secret|api[-\s]?key|token)\b/i.test(content);
 
-  // Load existing message for editing.
   useEffect(() => {
     if (snippetId) {
+      let cancelled = false;
       db.getSnippetById(snippetId).then(s => {
+        if (cancelled) return;
         if (s) {
           setTitle(s.title);
           setContent(s.content);
           setSelectedCategory(s.categoryId ?? categoryItems[0]?.id ?? 'other');
         }
       });
+      return () => { cancelled = true; };
     }
   }, [snippetId, categoryItems]);
 
@@ -81,18 +81,34 @@ export const AddSnippetScreen: React.FC = () => {
     }
   }, [categoryItems, selectedCategory]);
 
+  const handleDelete = () => {
+    Alert.alert('Delete Message', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          if (snippetId) {
+            await deleteSnippet(snippetId);
+            navigation.goBack();
+          }
+        },
+      },
+    ]);
+  };
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: isEditing ? 'Edit Message' : 'New Message',
       headerRight: isEditing
         ? () => (
-            <TouchableOpacity onPress={handleDelete} style={{ padding: 8 }}>
-              <Trash2 size={20} color={theme.danger} />
-            </TouchableOpacity>
-          )
+          <TouchableOpacity onPress={handleDelete} style={{ padding: 8 }}>
+            <Trash2 size={20} color={theme.danger} />
+          </TouchableOpacity>
+        )
         : undefined,
     });
-  }, [isEditing, navigation, theme.danger]);
+  }, [isEditing, navigation, theme.danger, handleDelete]);
 
   const handleSave = async () => {
     const isTitleMissing = !title.trim();
@@ -139,26 +155,10 @@ export const AddSnippetScreen: React.FC = () => {
     }
   };
 
-  const handleDelete = () => {
-    Alert.alert('Delete Message', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          if (snippetId) {
-            await deleteSnippet(snippetId);
-            navigation.goBack();
-          }
-        },
-      },
-    ]);
-  };
-
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.label, { color: theme.textSecondary }]}>Title</Text>
@@ -222,9 +222,9 @@ export const AddSnippetScreen: React.FC = () => {
                 selectedCategory === cat.id
                   ? { backgroundColor: theme.primary, borderColor: theme.primary }
                   : {
-                      borderColor: pressed ? cat.color : theme.border,
-                      backgroundColor: pressed ? theme.surface : theme.surfaceAlt,
-                    },
+                    borderColor: pressed ? cat.color : theme.border,
+                    backgroundColor: pressed ? theme.surface : theme.surfaceAlt,
+                  },
                 pressed && selectedCategory !== cat.id && styles.catChipPressed,
               ]}
               onPress={() => setSelectedCategory(cat.id)}

@@ -11,7 +11,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  signInWithGoogleAndLink: async () => {},
+  signInWithGoogleAndLink: async () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -29,14 +29,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const subscriber = auth().onAuthStateChanged(async (currentUser) => {
       if (!currentUser) {
+        // No user yet — sign in anonymously. The resulting auth state change
+        // will re-fire this callback with the new anonymous user, hitting the
+        // else branch below. We do NOT set loading=false here so the app
+        // stays on the splash until the anonymous session is established.
         try {
-          // Sign in anonymously on app launch if no user exists
           await auth().signInAnonymously();
         } catch (error) {
-          console.error("Anonymous auth failed:", error);
+          // Anonymous sign-in failed (no network, emulator issue, etc.).
+          // Surface a safe null-user state rather than hanging forever.
+          console.error('Anonymous auth failed:', error);
+          setUser(null);
           setLoading(false);
         }
       } else {
+        // Covers both the new anonymous user and any subsequent sign-in/link.
         setUser(currentUser);
         setLoading(false);
       }
@@ -49,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Check if your device supports Google Play
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      
+
       // Get the users ID token
       const response = await GoogleSignin.signIn();
       const idToken = response.data?.idToken;

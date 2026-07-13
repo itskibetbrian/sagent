@@ -313,7 +313,6 @@ export const SnippetsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     premiumPromptReason,
     refresh,
     refreshShareUsage,
-    searchQuery,
     snippets,
     shareSnippet,
     toggleFavorite,

@@ -104,12 +104,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     (async () => {
       try {
+        // Ensure the database is initialised before reading preferences.
+        // db.init() is idempotent — calling it here is safe even though
+        // RootNavigator also calls it; the second call is a no-op.
+        await db.init();
         const storedMode = await db.getPreference('theme_mode');
         if (isMounted && (storedMode === 'light' || storedMode === 'dark' || storedMode === 'system')) {
           setPreference(storedMode);
         }
       } catch {
-        // Ignore until the database is ready.
+        // Ignore — default 'system' preference will be used.
       } finally {
         if (isMounted) setIsThemeReady(true);
       }

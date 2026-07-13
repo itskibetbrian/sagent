@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
-  Alert,
   Linking,
   Share,
   Modal,
@@ -22,9 +21,6 @@ import {
   Zap,
   FileText,
   Share2,
-  Bug,
-  Trash2,
-  Clipboard,
   Edit2,
   X,
   Save,
@@ -35,6 +31,10 @@ import { textFont } from '../constants/typography';
 import { RootStackParamList } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { useSnippets } from '../hooks/useSnippets';
+
+// Read version from app.json at build time — single source of truth.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const APP_VERSION: string = require('../../app.json')?.expo?.version ?? '1.0.0';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -85,7 +85,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const { theme } = useTheme();
-  const { isPremium, refresh, refreshShareUsage } = useSnippets();
+  const { isPremium } = useSnippets();
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [showHowTo, setShowHowTo] = useState(false);
 
@@ -131,7 +131,7 @@ export const SettingsScreen: React.FC = () => {
               <Text style={[styles.premiumTitle, { color: theme.onPrimary }]}>Upgrade to Pro</Text>
             </View>
             <Text style={[styles.premiumSub, { color: `${theme.onPrimary}DD` }]}>
-              Stop typing, start closing. Get the full power of Sagent.
+              Get the full power of Sagent for your business or life. Save 4+ hours every month.
             </Text>
           </TouchableOpacity>
         )}
@@ -193,7 +193,7 @@ export const SettingsScreen: React.FC = () => {
           />
         </Section>
 
-        <Text style={[styles.version, { color: theme.textSecondary }]}>Sagent v1.0.0</Text>
+        <Text style={[styles.version, { color: theme.textSecondary }]}>Sagent v{APP_VERSION}</Text>
       </ScrollView>
 
       <Modal visible={showHowTo} transparent animationType="slide" onRequestClose={() => setShowHowTo(false)}>
@@ -235,7 +235,7 @@ export const SettingsScreen: React.FC = () => {
                 {
                   icon: Zap,
                   title: 'Go pro',
-                  description: 'Remove our branding and send un limited message to your customers.',
+                  description: 'Remove our branding and send unlimited messages to your customers.',
                 },
               ].map((item, index, items) => {
                 const Icon = item.icon;

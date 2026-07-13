@@ -91,7 +91,7 @@ class BillingModule(
                                 putString("offerToken", offer.offerToken)
                                 putString("formattedPrice", phase?.formattedPrice)
                                 putString("billingPeriod", phase?.billingPeriod)
-                                putInt("priceAmountMicros", (phase?.priceAmountMicros ?: 0L).toInt())
+                                putDouble("priceAmountMicros", (phase?.priceAmountMicros ?: 0L).toDouble())
                                 putString("priceCurrencyCode", phase?.priceCurrencyCode)
                                 putInt("recurrenceMode", phase?.recurrenceMode ?: -1)
                             }

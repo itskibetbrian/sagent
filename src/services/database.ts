@@ -84,41 +84,45 @@ class DatabaseService {
     const [row, seededPreference, hasOnboarded] = await Promise.all([
       db.getFirstAsync<{ count: number }>(`SELECT COUNT(*) as count FROM snippets`),
       this.getPreference('example_snippets_seeded', 'false'),
-      this.getPreference('hasOnboarded', 'false'),
+      this.getPreference('onboarded', 'false'),
     ]);
 
-    // AsyncStorage is not installed in this app and the task forbids new libraries,
-    // so first-launch seeding uses Sagent's existing preference store.
     if ((row?.count ?? 0) > 0 || seededPreference === 'true' || hasOnboarded === 'true') {
       return;
     }
 
     const now = Date.now();
-    const examples: Array<SnippetInsert & { id: string; categoryId: string | null }> = [
+    const examples: Array<SnippetInsert & { id: string; categoryId: string }> = [
       {
-        id: `${now.toString(36)}-example-price-list`,
+        id: `${now.toString(36)}-example-welcome`,
+        title: 'Welcome',
+        content: 'Welcome to the app. Click on a block to send it.',
+        categoryId: 'welcome',
+      },
+      {
+        id: `${(now + 1).toString(36)}-example-price-list`,
         title: 'Price List',
         content: "Hi! Here's our current price list. Let me know which option works best for you and I'll get you sorted right away.",
-        categoryId: null,
+        categoryId: 'sales',
       },
       {
-        id: `${(now + 1).toString(36)}-example-welcome`,
+        id: `${(now + 2).toString(36)}-example-support`,
         title: 'Welcome Message',
         content: 'Welcome! We are thrilled to have you here. Let us know if you need any help getting started.',
-        categoryId: null,
+        categoryId: 'support',
       },
       {
-        id: `${(now + 2).toString(36)}-example-payment-link`,
+        id: `${(now + 3).toString(36)}-example-payment-link`,
         title: 'Payment Link',
         content: 'Please use the link below to complete your payment. Reach out if you run into any issues — happy to help!',
-        categoryId: null,
+        categoryId: 'finance',
       },
       {
-        id: `${(now + 3).toString(36)}-example-sagent`,
+        id: `${(now + 4).toString(36)}-example-sagent`,
         title: 'Sagent App',
         content: 'Try Sagent for saving and sending the messages you reuse every day: https://play.google.com/store/apps/details?id=com.sagent.app',
-        categoryId: null,
-      }
+        categoryId: 'marketing',
+      },
     ];
 
     for (const [index, snippet] of examples.entries()) {
@@ -142,7 +146,8 @@ class DatabaseService {
         s.id, s.title, s.content, s.category_id as categoryId,
         s.is_favorite as isFavorite, s.use_count as useCount, s.last_used_at as lastUsedAt,
         s.created_at as createdAt, s.updated_at as updatedAt,
-        c.name as categoryName, c.color as categoryColor
+        COALESCE(c.name, 'Other') as categoryName,
+        COALESCE(c.color, '#8B5CF6') as categoryColor
       FROM snippets s
       LEFT JOIN categories c ON s.category_id = c.id
       ORDER BY COALESCE(s.last_used_at, s.updated_at) DESC
@@ -157,28 +162,13 @@ class DatabaseService {
         s.id, s.title, s.content, s.category_id as categoryId,
         s.is_favorite as isFavorite, s.use_count as useCount, s.last_used_at as lastUsedAt,
         s.created_at as createdAt, s.updated_at as updatedAt,
-        c.name as categoryName, c.color as categoryColor
+        COALESCE(c.name, 'Other') as categoryName,
+        COALESCE(c.color, '#8B5CF6') as categoryColor
       FROM snippets s
       LEFT JOIN categories c ON s.category_id = c.id
       WHERE s.id = ?
     `, [id]);
     return row ? this.mapSnippet(row) : null;
-  }
-
-  async getSnippetsByCategory(categoryId: string): Promise<Snippet[]> {
-    const db = this.getDb();
-    const rows = await db.getAllAsync<any>(`
-      SELECT
-        s.id, s.title, s.content, s.category_id as categoryId,
-        s.is_favorite as isFavorite, s.use_count as useCount, s.last_used_at as lastUsedAt,
-        s.created_at as createdAt, s.updated_at as updatedAt,
-        c.name as categoryName, c.color as categoryColor
-      FROM snippets s
-      LEFT JOIN categories c ON s.category_id = c.id
-      WHERE s.category_id = ?
-      ORDER BY COALESCE(s.last_used_at, s.updated_at) DESC
-    `, [categoryId]);
-    return rows.map(this.mapSnippet);
   }
 
   async getFavoriteSnippets(): Promise<Snippet[]> {
@@ -188,29 +178,13 @@ class DatabaseService {
         s.id, s.title, s.content, s.category_id as categoryId,
         s.is_favorite as isFavorite, s.use_count as useCount, s.last_used_at as lastUsedAt,
         s.created_at as createdAt, s.updated_at as updatedAt,
-        c.name as categoryName, c.color as categoryColor
+        COALESCE(c.name, 'Other') as categoryName,
+        COALESCE(c.color, '#8B5CF6') as categoryColor
       FROM snippets s
       LEFT JOIN categories c ON s.category_id = c.id
       WHERE s.is_favorite = 1
       ORDER BY s.use_count DESC
     `);
-    return rows.map(this.mapSnippet);
-  }
-
-  async searchSnippets(query: string): Promise<Snippet[]> {
-    const db = this.getDb();
-    const pattern = `%${query}%`;
-    const rows = await db.getAllAsync<any>(`
-      SELECT
-        s.id, s.title, s.content, s.category_id as categoryId,
-        s.is_favorite as isFavorite, s.use_count as useCount, s.last_used_at as lastUsedAt,
-        s.created_at as createdAt, s.updated_at as updatedAt,
-        c.name as categoryName, c.color as categoryColor
-      FROM snippets s
-      LEFT JOIN categories c ON s.category_id = c.id
-      WHERE s.title LIKE ? OR s.content LIKE ? OR c.name LIKE ?
-      ORDER BY s.use_count DESC, COALESCE(s.last_used_at, s.updated_at) DESC
-    `, [pattern, pattern, pattern]);
     return rows.map(this.mapSnippet);
   }
 
@@ -241,8 +215,8 @@ class DatabaseService {
     const fields: string[] = [];
     const values: any[] = [];
 
-    if (data.title !== undefined)      { fields.push('title = ?');       values.push(data.title); }
-    if (data.content !== undefined)    { fields.push('content = ?');     values.push(data.content); }
+    if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
+    if (data.content !== undefined) { fields.push('content = ?'); values.push(data.content); }
     if (data.categoryId !== undefined) { fields.push('category_id = ?'); values.push(data.categoryId); }
     if (data.isFavorite !== undefined) { fields.push('is_favorite = ?'); values.push(data.isFavorite ? 1 : 0); }
 
@@ -296,12 +270,6 @@ class DatabaseService {
     return newVal === 1;
   }
 
-  async getSnippetCount(): Promise<number> {
-    const db = this.getDb();
-    const row = await db.getFirstAsync<{ count: number }>(`SELECT COUNT(*) as count FROM snippets`);
-    return row?.count ?? 0;
-  }
-
   async getPreference(key: string, fallback?: string): Promise<string | undefined> {
     const db = this.getDb();
     const row = await db.getFirstAsync<{ value: string }>(
@@ -318,21 +286,6 @@ class DatabaseService {
        ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
       [key, value]
     );
-  }
-
-  async clearAllData(): Promise<void> {
-    const db = this.getDb();
-
-    // Sagent uses SQLite preferences/tables instead of AsyncStorage, so this
-    // clears the equivalent app-owned keys, saved messages, favorites, and categories.
-    await db.execAsync(`
-      DELETE FROM snippets;
-      DELETE FROM categories;
-      DELETE FROM preferences;
-    `);
-
-    await this.seedDefaultCategories();
-    await this.seedExampleMessages();
   }
 
   // ─── Category CRUD ────────────────────────────────────────────────────────
@@ -369,8 +322,14 @@ class DatabaseService {
   async deleteCategory(id: string): Promise<void> {
     const db = this.getDb();
     if (id === 'other') {
+      // 'Other' is the permanent fallback category — it cannot be deleted.
       return;
     }
+    // Reassign orphaned snippets to 'Other' before removing the category.
+    // Ensure 'Other' exists first so the foreign key reference is valid.
+    await db.runAsync(
+      `INSERT OR IGNORE INTO categories (id, name, color, icon) VALUES ('other', 'Other', '#8B5CF6', 'tag')`
+    );
     await db.runAsync(
       `UPDATE snippets SET category_id = 'other' WHERE category_id = ?`,
       [id]

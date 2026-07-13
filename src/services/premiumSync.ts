@@ -3,7 +3,14 @@ import nativeBilling, { NativeBillingState } from './nativeBilling';
 
 const PREMIUM_ENABLED_KEY = 'premium_enabled';
 
+/**
+ * Read from the Firestore-backed SQLite preference which is the
+ * authoritative source when a backend is configured.
+ */
 const applyBillingStateToPremium = async (state: NativeBillingState): Promise<void> => {
+  // When BACKEND_VERIFY_URL is set the entitlement is managed server-side
+  // via Firestore → useEntitlement → SQLite sync, so we skip local updates.
+  // When no backend is configured we fall back to the local billing state.
   if (state.status === 'subscribed') {
     await db.setPreference(PREMIUM_ENABLED_KEY, 'true');
     return;

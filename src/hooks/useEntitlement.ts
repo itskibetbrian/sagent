@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import firestore from '@react-native-firebase/firestore';
 import { useAuth } from '../providers/AuthProvider';
+import { db } from '../services/database';
 
 export interface EntitlementData {
   isPro: boolean;
@@ -12,6 +13,7 @@ export function useEntitlement() {
   const { user } = useAuth();
   const [entitlement, setEntitlement] = useState<EntitlementData>({ isPro: false });
   const [loading, setLoading] = useState(true);
+  const lastSyncedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -20,32 +22,62 @@ export function useEntitlement() {
       return;
     }
 
-    const subscriber = firestore()
-      .collection('users')
-      .doc(user.uid)
-      .collection('entitlement')
-      .doc('pro')
-      .onSnapshot(
-        (documentSnapshot) => {
-          if (documentSnapshot.exists) {
-            const data = documentSnapshot.data() as EntitlementData;
-            setEntitlement({
-              isPro: data.isPro ?? false,
-              basePlanId: data.basePlanId,
-              expiryDate: data.expiryDate,
-            });
-          } else {
-            setEntitlement({ isPro: false });
-          }
-          setLoading(false);
-        },
-        (error) => {
-          console.error("Entitlement fetch error:", error);
-          setLoading(false);
-        }
-      );
+    let unsubscribe: (() => void) | undefined;
 
-    return () => subscriber();
+    const subscribe = () => {
+      try {
+        unsubscribe = firestore()
+          .collection('users')
+          .doc(user.uid)
+          .collection('entitlement')
+          .doc('pro')
+          .onSnapshot(
+            (documentSnapshot) => {
+              let isPro = false;
+              let data: EntitlementData = { isPro: false };
+
+              if (documentSnapshot.exists) {
+                data = documentSnapshot.data() as EntitlementData;
+                isPro = data.isPro ?? false;
+              }
+
+              setEntitlement({
+                isPro,
+                basePlanId: data.basePlanId,
+                expiryDate: data.expiryDate,
+              });
+
+              // Only write to SQLite when the value actually changes
+              const value = isPro ? 'true' : 'false';
+              if (lastSyncedRef.current !== value) {
+                lastSyncedRef.current = value;
+                db.setPreference('premium_enabled', value).catch(
+                  (err) => console.error('[Entitlement] Failed to persist premium flag:', err)
+                );
+              }
+
+              setLoading(false);
+            },
+            (error) => {
+              console.error('[Entitlement] Firestore snapshot error:', error);
+              // Fall back to the locally cached SQLite value so the app stays usable
+              db.getPreference('premium_enabled', 'false').then(val => {
+                setEntitlement({ isPro: val === 'true' });
+              }).catch(() => { }).finally(() => setLoading(false));
+            }
+          );
+      } catch (err) {
+        // Firebase not yet initialised — fall back to local cache
+        console.error('[Entitlement] Failed to attach Firestore listener:', err);
+        db.getPreference('premium_enabled', 'false').then(val => {
+          setEntitlement({ isPro: val === 'true' });
+        }).catch(() => { }).finally(() => setLoading(false));
+      }
+    };
+
+    subscribe();
+
+    return () => unsubscribe?.();
   }, [user]);
 
   return { ...entitlement, loading };

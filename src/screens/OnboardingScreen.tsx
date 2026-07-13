@@ -57,7 +57,6 @@ export const OnboardingScreen: React.FC = () => {
   const handleNext = async () => {
     if (isLast) {
       await db.setPreference('onboarded', 'true');
-      await db.setPreference('hasOnboarded', 'true');
       navigation.replace('Main');
       return;
     }

@@ -34,7 +34,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         placeholder={placeholder}
         placeholderTextColor={theme.textSecondary}
         returnKeyType="search"
-        autoCorrect={false}
         autoCapitalize="none"
         clearButtonMode="never"
       />

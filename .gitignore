@@ -52,5 +52,9 @@ yarn-error.log*
 *.db
 *.sqlite
 
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
 # TypeScript
 *.tsbuildinfo

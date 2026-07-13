@@ -8,7 +8,9 @@
     "backgroundColor": "#EDE9F6",
     "scheme": "sagent",
     "icon": "./assets/icon.png",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.sagent.app",
@@ -21,7 +23,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0F0F13"
+        "backgroundColor": "#7C3AED"
       },
       "backgroundColor": "#EDE9F6",
       "package": "com.sagent.app",
@@ -36,6 +38,13 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": []
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-google-signin/google-signin"
+    ],
+    "extra": {
+      "backendVerifyUrl": ""
+    }
   }
 }

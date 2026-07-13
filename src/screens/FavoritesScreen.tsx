@@ -27,6 +27,7 @@ export const FavoritesScreen: React.FC = () => {
   const { theme } = useTheme();
   const [favorites, setFavorites] = useState<Snippet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedOnce = React.useRef(false);
   const { copiedId, copySnippet, shareSnippet, toggleFavorite: toggleFav, deleteSnippet } = useSnippets();
   const gridFavorites = useMemo(() => padGridItems(favorites, NUM_COLUMNS), [favorites]);
 
@@ -37,17 +38,26 @@ export const FavoritesScreen: React.FC = () => {
   }, [navigation]);
 
   const loadFavorites = useCallback(async () => {
-    setIsLoading(true);
+    // Only show the full-screen spinner on the very first load.
+    // Subsequent focus refreshes update silently to avoid the layout jump.
+    if (!hasLoadedOnce.current) {
+      setIsLoading(true);
+    }
     try {
       const data = await db.getFavoriteSnippets();
       setFavorites(data);
     } finally {
       setIsLoading(false);
+      hasLoadedOnce.current = true;
     }
   }, []);
 
   useFocusEffect(useCallback(() => {
-    loadFavorites();
+    let cancelled = false;
+    loadFavorites().then(() => {
+      if (cancelled) return;
+    });
+    return () => { cancelled = true; };
   }, [loadFavorites]));
 
   const handleToggleFav = useCallback(async (id: string) => {
@@ -117,7 +127,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingTop: 2, paddingBottom: 112 },
   row: { alignItems: 'stretch', justifyContent: 'space-between', paddingHorizontal: 12, gap: 8 },
-  cardPlaceholder: { flex: 1, marginBottom: 8 },
+  cardPlaceholder: { flex: 1, marginBottom: 8, height: 138 },
   count: {
     ...textFont('regular'),
     fontSize: 13,

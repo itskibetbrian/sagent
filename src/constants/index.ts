@@ -14,15 +14,14 @@ export const CATEGORY_COLORS = [
 ];
 
 export const DEFAULT_CATEGORIES = [
-  { id: 'sales', name: 'Sales', color: '#8B5CF6', icon: 'tag' },
-  { id: 'support', name: 'Support', color: '#3B82F6', icon: 'tag' },
-  { id: 'finance', name: 'Finance', color: '#10B981', icon: 'credit-card' },
-  { id: 'marketing', name: 'Marketing', color: '#EC4899', icon: 'globe' },
-  { id: 'operations', name: 'Operations', color: '#F59E0B', icon: 'briefcase' },
-  { id: 'other', name: 'Other', color: '#8B5CF6', icon: 'tag' },
+  { id: 'welcome', name: 'Welcome', color: '#6366F1', icon: 'star', createdAt: 0 },
+  { id: 'sales', name: 'Sales', color: '#8B5CF6', icon: 'tag', createdAt: 0 },
+  { id: 'support', name: 'Support', color: '#3B82F6', icon: 'tag', createdAt: 0 },
+  { id: 'finance', name: 'Finance', color: '#10B981', icon: 'credit-card', createdAt: 0 },
+  { id: 'marketing', name: 'Marketing', color: '#EC4899', icon: 'globe', createdAt: 0 },
+  { id: 'operations', name: 'Operations', color: '#F59E0B', icon: 'briefcase', createdAt: 0 },
+  { id: 'other', name: 'Other', color: '#8B5CF6', icon: 'tag', createdAt: 0 },
 ];
-
-export const FREE_TIER_LIMIT = 10;
 
 export const MESSAGE_TEMPLATES = [
   {

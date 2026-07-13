@@ -47,7 +47,7 @@ const TabItem: React.FC<TabItemProps> = ({ label, isFocused, onPress, icon: Icon
       duration: TAB_TRANSITION_CONFIG.duration,
       easing: Easing.out(Easing.cubic),
     });
-  }, [activeProgress, isFocused]);
+  }, [isFocused]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 0.96 + activeProgress.value * 0.04 }],
@@ -120,7 +120,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         <BlurView
           intensity={mode === 'dark' ? 72 : 82}
           tint={mode === 'dark' ? 'dark' : 'light'}
-          experimentalBlurMethod="dimezisBlurView"
+          {...Platform.select({ android: { experimentalBlurMethod: 'dimezisBlurView' as const }, ios: {} })}
           style={StyleSheet.absoluteFillObject}
         />
         <View
@@ -186,7 +186,6 @@ export const MainTabNavigator: React.FC = () => {
         headerStyle: { backgroundColor: theme.header },
         headerTintColor: theme.text,
         headerShadowVisible: false,
-        tabBarHideOnKeyboard: true,
         tabBarStyle: {
           display: 'none',
           position: 'absolute',

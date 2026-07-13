@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,9 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Check, LoaderCircle, X } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { textFont } from '../constants/typography';
 import { useTheme } from '../hooks/useTheme';
@@ -19,11 +17,10 @@ import { useAuth } from '../providers/AuthProvider';
 import { useEntitlement } from '../hooks/useEntitlement';
 import { NativeSubscriptionProduct } from '../services/nativeBilling';
 import { useSubscription } from '../hooks/useSubscription';
-import { BillingResponseCode } from '../utils/billingErrors';
 
 const BENEFITS = [
   'Reclaim 4+ Hours a Month — stop retyping the same messages. Send any message in under 10 seconds.',
-  'Infinite Messages — never run out of space for your winning talk-tracks.',
+  'Infinite Messages — never run out of space for your winning talk tracks.',
   'No Watermark — send scripts without the "Sent via Sagent" tag. Professionalism only.',
 ];
 
@@ -34,45 +31,45 @@ const SUBSCRIPTION_SKUS = {
   yearly: 'com.sagent.app.premium.yearly',
 } as const;
 
+// Hoisted so the array reference is stable across renders — prevents the
+// useSubscription skus effect from firing on every re-render.
+const SUBSCRIPTION_SKUS_LIST = Object.values(SUBSCRIPTION_SKUS) as string[];
+
 type PlanKey = keyof typeof SUBSCRIPTION_SKUS;
 
 interface PlanConfig {
   label: string;
+  /** Displayed price — placeholder until real price is fetched */
   price: string;
   period: string;
   badge?: string;
 }
 
-const FALLBACK_PLANS: Record<PlanKey, PlanConfig> = {
-  monthly: { label: 'Monthly', price: '...', period: '' },
-  yearly: { label: 'Yearly', price: '...', period: '', badge: 'Save 25%' },
+// Hardcoded placeholder prices shown immediately (before any network fetch).
+const PLACEHOLDER_PLANS: Record<PlanKey, PlanConfig> = {
+  monthly: { label: 'Monthly', price: '$9.99', period: '/month' },
+  yearly: { label: 'Yearly', price: '$89.99', period: '/year', badge: 'Save 25%' }, // badge recalculated from prices when products are loaded
 };
 
-const getPeriodLabel = (billingPeriod?: string | null, planKey?: PlanKey): string | null => {
+const getPeriodLabel = (billingPeriod?: string | null): string | null => {
   switch (billingPeriod) {
-    case 'P1M':
-      return '/month';
-    case 'P1Y':
-      return '/year';
-    default:
-      return null;
+    case 'P1M': return '/month';
+    case 'P1Y': return '/year';
+    default: return null;
   }
 };
 
-const getPlanFromSubscription = (
-  subscription: NativeSubscriptionProduct | undefined,
-  fallback: PlanConfig
+const mergePlanWithProduct = (
+  base: PlanConfig,
+  product: NativeSubscriptionProduct | undefined,
 ): PlanConfig => {
-  if (!subscription) {
-    return fallback;
-  }
-
-  const phase = subscription.offers.find(offer => offer.formattedPrice);
-
+  if (!product) return base;
+  const offer = product.offers.find(o => o.formattedPrice);
+  if (!offer) return base;
   return {
-    ...fallback,
-    price: phase?.formattedPrice ?? fallback.price,
-    period: getPeriodLabel(phase?.billingPeriod, fallback.label.toLowerCase() as PlanKey) ?? (phase?.formattedPrice ? (fallback.label === 'Monthly' ? '/month' : '/year') : fallback.period),
+    ...base,
+    price: offer.formattedPrice ?? base.price,
+    period: getPeriodLabel(offer.billingPeriod) ?? base.period,
   };
 };
 
@@ -91,55 +88,79 @@ export const PaywallScreen: React.FC = () => {
     products,
     purchase: launchPurchase,
     restorePurchases,
-  } = useSubscription(Object.values(SUBSCRIPTION_SKUS));
+  } = useSubscription(SUBSCRIPTION_SKUS_LIST);
 
+  // ── Redirect already-subscribed users away from the paywall ──────────────
+  // Guard against calling goBack() before the screen is fully mounted/focused,
+  // which corrupts the navigation stack on React Navigation 6.
   useEffect(() => {
     if (isCheckingPremium) return;
-
-    if (isPro) {
-      // We use settings screen as an example of gated area
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Main', params: { screen: 'Settings' } }],
-        });
-        return;
+    if (!isPro) return;
+    // Defer by one frame so the screen has finished mounting before we navigate
+    const timer = setTimeout(() => {
+      if (navigation.canGoBack()) {
+        navigation.goBack();
       }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isPro, isCheckingPremium, navigation]);
 
+  // ── Handle successful purchase ────────────────────────────────────────────
   useEffect(() => {
-    if (billingState.status === 'subscribed') {
-      Alert.alert(
-        'Premium enabled',
-        `Your plan is now active on this device.`
-      );
-      navigation.goBack();
-    }
+    if (billingState.status !== 'subscribed') return;
+    const timer = setTimeout(() => {
+      Alert.alert('Premium enabled', 'Your plan is now active on this device.');
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [billingState.status, navigation]);
 
-  const subscriptionsBySku = useMemo(() => {
-    return products.reduce<Record<string, NativeSubscriptionProduct>>((acc, subscription) => {
-      acc[subscription.productId] = subscription;
+  // ── Build product lookup map ──────────────────────────────────────────────
+  const subscriptionsBySku = useMemo(
+    () => products.reduce<Record<string, NativeSubscriptionProduct>>((acc, p) => {
+      acc[p.productId] = p;
       return acc;
-    }, {});
-  }, [products]);
+    }, {}),
+    [products],
+  );
 
+  // Merge fetched prices over the placeholders (if available).
+  // Until products arrive the user always sees the hardcoded prices.
   const plans = useMemo<Record<PlanKey, PlanConfig>>(
-    () => ({
-      monthly: getPlanFromSubscription(subscriptionsBySku[SUBSCRIPTION_SKUS.monthly], FALLBACK_PLANS.monthly),
-      yearly: getPlanFromSubscription(subscriptionsBySku[SUBSCRIPTION_SKUS.yearly], FALLBACK_PLANS.yearly),
-    }),
-    [subscriptionsBySku]
+    () => {
+      const monthly = mergePlanWithProduct(PLACEHOLDER_PLANS.monthly, subscriptionsBySku[SUBSCRIPTION_SKUS.monthly]);
+      const yearly = mergePlanWithProduct(PLACEHOLDER_PLANS.yearly, subscriptionsBySku[SUBSCRIPTION_SKUS.yearly]);
+      // Recalculate the badge from actual prices if both are available
+      if (subscriptionsBySku[SUBSCRIPTION_SKUS.monthly] && subscriptionsBySku[SUBSCRIPTION_SKUS.yearly]) {
+        const monthlyPrice = monthly.price.replace(/[^0-9.]/g, '');
+        const yearlyPrice = yearly.price.replace(/[^0-9.]/g, '');
+        const monthlyNum = parseFloat(monthlyPrice);
+        const yearlyNum = parseFloat(yearlyPrice);
+        if (monthlyNum > 0 && yearlyNum > 0) {
+          const yearlyPerMonth = yearlyNum / 12;
+          const savings = Math.round((1 - yearlyPerMonth / monthlyNum) * 100);
+          if (savings > 0) {
+            yearly.badge = `Save ${savings}%`;
+          }
+        }
+      }
+      return { monthly, yearly };
+    },
+    [subscriptionsBySku],
   );
 
   const active = plans[plan];
 
-  const handlePurchase = async () => {
-    // Auth Gate: If user is anonymous, force them to sign in to Google
+  // ── Purchase ──────────────────────────────────────────────────────────────
+  const handlePurchase = useCallback(async () => {
+    // Auth gate: anonymous users must link a Google account first
     if (user?.isAnonymous) {
       setIsLinkingAuth(true);
       try {
         await signInWithGoogleAndLink();
-      } catch (e) {
+      } catch {
         Toast.show({ type: 'error', text1: 'Sign in failed. Please try again.' });
         setIsLinkingAuth(false);
         return;
@@ -154,7 +175,7 @@ export const PaywallScreen: React.FC = () => {
 
     const subscription = subscriptionsBySku[SUBSCRIPTION_SKUS[plan]];
     if (!subscription) {
-      Toast.show({ type: 'error', text1: 'Product not available on this device.' });
+      Toast.show({ type: 'error', text1: 'Product not available. Please try again in a moment.' });
       return;
     }
 
@@ -167,37 +188,48 @@ export const PaywallScreen: React.FC = () => {
     try {
       await launchPurchase(subscription.productId, offer.offerToken);
     } catch (error: any) {
-      // error.message is already user-safe (mapped by useSubscription)
       Toast.show({ type: 'error', text1: error?.message ?? 'Purchase failed. Please try again.' });
     }
-  };
+  }, [isAvailable, launchPurchase, plan, signInWithGoogleAndLink, subscriptionsBySku, user?.isAnonymous]);
 
-  const handleRestore = async () => {
+  // ── Restore ───────────────────────────────────────────────────────────────
+  const handleRestore = useCallback(async () => {
     if (!isAvailable) {
       Toast.show({ type: 'error', text1: 'Billing is not available on this device.' });
       return;
     }
-
     try {
-      await restorePurchases();
-      if (billingState.status === 'subscribed') {
+      const freshState = await restorePurchases();
+      if (freshState.status === 'subscribed') {
         Alert.alert('Restore successful', 'Your premium subscription has been restored.');
-        navigation.goBack();
+        if (navigation.canGoBack()) navigation.goBack();
       } else {
         Toast.show({ type: 'info', text1: 'No active subscription was found.' });
       }
     } catch (error: any) {
-      // error.message is already user-safe (mapped by useSubscription)
       Toast.show({ type: 'error', text1: error?.message ?? 'Restore failed. Please try again.' });
     }
-  };
+  }, [isAvailable, navigation, restorePurchases]);
 
   if (isCheckingPremium) {
-    return null;
+    return <View style={[styles.container, { backgroundColor: theme.background }]} />;
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.content}
+    >
+      {/* ── Dismiss button ── */}
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={[styles.dismiss, { backgroundColor: theme.surface, borderColor: theme.border }]}
+        activeOpacity={0.75}
+      >
+        <X size={24} color={theme.text} strokeWidth={3} />
+      </TouchableOpacity>
+
+      {/* ── Hero ── */}
       <View style={styles.hero}>
         <BrandIcon size={88} />
         <Text style={[styles.heroTitle, { color: theme.text }]}>Sagent Pro</Text>
@@ -206,6 +238,7 @@ export const PaywallScreen: React.FC = () => {
         </Text>
       </View>
 
+      {/* ── Benefits list ── */}
       <View style={[styles.benefitsList, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         {BENEFITS.map(text => (
           <View key={text} style={styles.benefitRow}>
@@ -217,9 +250,10 @@ export const PaywallScreen: React.FC = () => {
         ))}
       </View>
 
+      {/* ── Plan toggle ── */}
       <View style={styles.toggle}>
         {(['monthly', 'yearly'] as const).map(key => {
-          const selectedPlan = plans[key];
+          const p = plans[key];
           const isActive = plan === key;
           return (
             <TouchableOpacity
@@ -233,55 +267,62 @@ export const PaywallScreen: React.FC = () => {
               activeOpacity={0.82}
             >
               {key === 'yearly' ? (
-                <View style={[styles.inlineBadge, { backgroundColor: theme.primary }]}>
-                  <Text style={[styles.badgeText, { color: theme.onPrimary }]}>{selectedPlan.badge}</Text>
-                </View>
+                <>
+                  {p.badge && (
+                    <View style={[styles.inlineBadge, { backgroundColor: theme.primary }]}>
+                      <Text style={[styles.badgeText, { color: theme.onPrimary }]}>{p.badge}</Text>
+                    </View>
+                  )}
+                  <Text style={[styles.planLabel, { color: isActive ? theme.primary : theme.textSecondary }]}>
+                    {p.label}
+                  </Text>
+                </>
               ) : (
                 <Text style={[styles.planLabel, { color: isActive ? theme.primary : theme.textSecondary }]}>
-                  {selectedPlan.label}
+                  {p.label}
                 </Text>
               )}
-              <Text style={[styles.planPrice, { color: theme.text }]}>{selectedPlan.price}</Text>
+              <Text style={[styles.planPrice, { color: theme.text }]}>{p.price}</Text>
               <Text style={[styles.planPeriod, { color: isActive ? theme.primary : theme.textSecondary }]}>
-                {selectedPlan.period}
+                {p.period}
               </Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
+      {/* ── CTA ── */}
       <TouchableOpacity
         style={[
           styles.cta,
-        { backgroundColor: theme.primary, shadowColor: theme.primary },
-        (isPurchasing || isLinkingAuth) && styles.ctaDisabled,
-      ]}
-      onPress={() => void handlePurchase()}
-      disabled={isPurchasing || isLinkingAuth}
-      activeOpacity={0.85}
-    >
-      {isLinkingAuth ? (
-        <View style={styles.loadingRow}>
-          <LoaderCircle size={18} color={theme.onPrimary} style={{ transform: [{ rotate: '0deg' }] }} />
-          <Text style={[styles.ctaText, { color: theme.onPrimary }]}>Signing In...</Text>
-        </View>
-      ) : isPurchasing ? (
-        <View style={styles.loadingRow}>
-            <LoaderCircle size={18} color={theme.onPrimary} style={{ transform: [{ rotate: '0deg' }] }} />
+          { backgroundColor: theme.primary, shadowColor: theme.primary },
+          (isPurchasing || isLinkingAuth) && styles.ctaDisabled,
+        ]}
+        onPress={() => void handlePurchase()}
+        disabled={isPurchasing || isLinkingAuth}
+        activeOpacity={0.85}
+      >
+        {isLinkingAuth ? (
+          <View style={styles.loadingRow}>
+            <LoaderCircle size={18} color={theme.onPrimary} />
+            <Text style={[styles.ctaText, { color: theme.onPrimary }]}>Signing In...</Text>
+          </View>
+        ) : isPurchasing ? (
+          <View style={styles.loadingRow}>
+            <LoaderCircle size={18} color={theme.onPrimary} />
             <Text style={[styles.ctaText, { color: theme.onPrimary }]}>Processing...</Text>
           </View>
-      ) : (
-        <Text style={[styles.ctaText, { color: theme.onPrimary }]}>
-          {user?.isAnonymous 
-            ? `Sign in to Start ${active.label}` 
-            : active.price === '...' 
-              ? `Start ${active.label}` 
+        ) : (
+          <Text style={[styles.ctaText, { color: theme.onPrimary }]}>
+            {user?.isAnonymous
+              ? `Sign in to Start ${active.label}`
               : `Start ${active.label} — ${active.price}${active.period}`}
-        </Text>
-      )}
-    </TouchableOpacity>
+          </Text>
+        )}
+      </TouchableOpacity>
 
-<TouchableOpacity
+      {/* ── Restore ── */}
+      <TouchableOpacity
         onPress={() => void handleRestore()}
         style={[styles.restoreButton, { borderColor: theme.border }]}
         activeOpacity={0.85}
@@ -290,27 +331,29 @@ export const PaywallScreen: React.FC = () => {
         <Text style={[styles.restoreButtonText, { color: theme.text }]}>Restore purchase</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.finePrint, { color: theme.textSecondary }]}> 
+      <Text style={[styles.finePrint, { color: theme.textSecondary }]}>
         Sagent Pro. Cancel anytime.
       </Text>
-
-
-
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={[styles.dismiss, { backgroundColor: theme.surface, borderColor: theme.border }]}
-        activeOpacity={0.75}
-      >
-        <X size={24} color={theme.text} strokeWidth={3} />
-      </TouchableOpacity>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 24, paddingBottom: 60 },
-  hero: { alignItems: 'center', marginVertical: 32, gap: 12 },
+  content: { padding: 24, paddingTop: 64, paddingBottom: 60 },
+  dismiss: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  hero: { alignItems: 'center', marginBottom: 28, gap: 12 },
   heroTitle: { ...textFont('bold'), fontSize: 30 },
   heroSubtitle: { ...textFont('regular'), fontSize: 17, textAlign: 'center', lineHeight: 27 },
   benefitsList: { borderRadius: 20, borderWidth: 1, padding: 20, gap: 16, marginBottom: 28 },
@@ -328,7 +371,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  badge: { position: 'absolute', top: 10, right: 10, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 },
   inlineBadge: {
     borderRadius: 12,
     paddingHorizontal: 10,
@@ -354,7 +396,6 @@ const styles = StyleSheet.create({
   ctaDisabled: { opacity: 0.6 },
   ctaText: { ...textFont('bold'), fontSize: 17 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  finePrint: { ...textFont('regular'), fontSize: 13, textAlign: 'center', lineHeight: 19, marginBottom: 16 },
   restoreButton: {
     borderWidth: 1,
     borderRadius: 18,
@@ -363,17 +404,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   restoreButtonText: { ...textFont('semibold'), fontSize: 15 },
-  dismiss: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  finePrint: { ...textFont('regular'), fontSize: 13, textAlign: 'center', lineHeight: 19, marginBottom: 16 },
 });
 
 export default PaywallScreen;

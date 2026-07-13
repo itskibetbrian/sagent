@@ -13,6 +13,7 @@ export const BrandIcon: React.FC<BrandIconProps> = ({ size = 44, style }) => (
     source={brandIcon}
     style={[{ width: size, height: size, borderRadius: size * 0.22 }, style]}
     resizeMode="contain"
+    accessibilityLabel="Sagent app icon"
   />
 );
 

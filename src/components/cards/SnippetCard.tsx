@@ -270,7 +270,7 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
             </TouchableOpacity>
 
             {/* Favorite button */}
-              <Animated.View style={heartStyle}>
+            <Animated.View style={heartStyle}>
               <TouchableOpacity
                 onPress={handleFavorite}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -388,8 +388,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 3,
+    // Reserve the same height even when hidden so the footer row never shifts.
+    minHeight: 20,
   },
   copyBadgeSpacer: {
+    // Same height as copyBadge (paddingVertical 3*2 + icon/text ~14px = ~20px)
+    // so the footer row height is stable whether copied or not.
+    height: 20,
     minWidth: 1,
   },
   copyLabel: {

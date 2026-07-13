@@ -57,12 +57,10 @@ export const RootNavigator: React.FC<RootNavigatorProps> = ({ fontsReady }) => {
     (async () => {
       try {
         await db.init();
-        const [onboarded, hasOnboarded] = await Promise.all([
-          db.getPreference('onboarded'),
-          db.getPreference('hasOnboarded'),
-        ]);
+        const onboarded = await db.getPreference('onboarded');
         if (!isMounted) return;
-        setInitialRoute(onboarded === 'true' || hasOnboarded === 'true' ? 'Main' : 'Onboarding');
+        // Only check 'onboarded' — 'hasOnboarded' was a duplicate from an earlier version
+        setInitialRoute(onboarded === 'true' ? 'Main' : 'Onboarding');
       } catch {
         if (!isMounted) return;
         setInitialRoute('Onboarding');

@@ -8,8 +8,18 @@ import {
   BillingResponseCode,
 } from '../utils/billingErrors';
 
-// Replace with your actual backend URL when deploying
-const BACKEND_VERIFY_URL = 'https://your-backend.com/api/verify-purchase';
+// Set this to your real backend verification endpoint before releasing to production.
+// Configure via app.json under expo.extra.backendVerifyUrl — no code change needed.
+// Leave empty to skip server-side verification (acceptable for development only).
+let _backendVerifyUrl: string | undefined;
+try {
+  // Read from app.json extra config at build time.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  _backendVerifyUrl = require('../../app.json')?.expo?.extra?.backendVerifyUrl;
+} catch { /* ignore */ }
+const BACKEND_VERIFY_URL: string = (_backendVerifyUrl && typeof _backendVerifyUrl === 'string')
+  ? _backendVerifyUrl
+  : '';
 
 export interface UseSubscriptionResult {
   isAvailable: boolean;
@@ -17,7 +27,9 @@ export interface UseSubscriptionResult {
   billingState: NativeBillingState;
   products: NativeSubscriptionProduct[];
   purchase: (productId: string, offerToken: string) => Promise<void>;
-  restorePurchases: () => Promise<void>;
+  // Returns the billing state observed after the restore attempt so callers
+  // can read the correct (non-stale) status without relying on React state.
+  restorePurchases: () => Promise<NativeBillingState>;
 }
 
 /**
@@ -28,10 +40,9 @@ export interface UseSubscriptionResult {
 function sanitiseBillingError(state: NativeBillingState): NativeBillingState {
   if (state.status !== 'error') return state;
 
-  // Log the raw native message for devs
   console.error('[Billing] Native error:', { message: state.message, code: state.code });
 
-  // USER_CANCELED → silently reset to ready (no error state at all)
+  // USER_CANCELED → silently reset to ready (no error shown to the user)
   if (state.code === BillingResponseCode.USER_CANCELED) {
     return { status: 'ready' };
   }
@@ -39,7 +50,6 @@ function sanitiseBillingError(state: NativeBillingState): NativeBillingState {
   const userMessage = getUserFacingBillingMessage(state.code);
   return {
     ...state,
-    // userMessage is null only for USER_CANCELED, which is handled above
     message: userMessage ?? undefined,
   };
 }
@@ -49,7 +59,7 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
   const [products, setProducts] = useState<NativeSubscriptionProduct[]>([]);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  // Initialize and fetch subscriptions
+  // ── Initialise billing and fetch product catalogue ──────────────────────
   useEffect(() => {
     if (!nativeBilling.isAvailable() || Platform.OS !== 'android') {
       setBillingState({ status: 'error', message: 'Billing is not available on this device.' });
@@ -80,12 +90,10 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
 
     void setup();
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [skus]);
 
-  // Listen for billing state changes and handle backend verification
+  // ── Listen for billing state changes and handle acknowledgement ──────────
   useEffect(() => {
     if (!nativeBilling.isAvailable() || Platform.OS !== 'android') return;
 
@@ -94,7 +102,6 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
     const unsubscribe = nativeBilling.subscribe(async (state) => {
       if (!isMounted) return;
 
-      // Sanitise before exposing to UI
       const safeState = sanitiseBillingError(state);
       setBillingState(safeState);
 
@@ -102,50 +109,56 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
         setIsPurchasing(false);
       }
 
-      // Handle successful purchases
+      // ── Acknowledge unacknowledged purchases ─────────────────────────────
       if (state.status === 'subscribed' && state.purchases) {
         const unacknowledged = state.purchases.filter(p => !p.isAcknowledged);
 
         for (const purchase of unacknowledged) {
           try {
-            const currentUser = auth().currentUser;
-            if (!currentUser) throw new Error('User not authenticated');
+            if (BACKEND_VERIFY_URL) {
+              // ── Server-side verification (production) ──────────────────
+              const currentUser = auth().currentUser;
+              if (!currentUser) throw new Error('User not authenticated');
 
-            const idToken = await currentUser.getIdToken();
+              const idToken = await currentUser.getIdToken();
 
-            // 1. Verify with Backend
-            const response = await fetch(BACKEND_VERIFY_URL, {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}`,
-              },
-              body: JSON.stringify({
-                uid: currentUser.uid,
-                purchaseToken: purchase.purchaseToken,
-                productId: purchase.productId,
-              }),
-            });
-
-            if (!response.ok) {
-              // Log the raw HTTP details for devs only
-              console.error('[Billing] Backend verification failed:', {
-                status: response.status,
-                statusText: response.statusText,
-                productId: purchase.productId,
+              const response = await fetch(BACKEND_VERIFY_URL, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({
+                  uid: currentUser.uid,
+                  purchaseToken: purchase.purchaseToken,
+                  productId: purchase.productId,
+                }),
               });
-              throw new Error('Backend verification failed');
+
+              if (!response.ok) {
+                console.error('[Billing] Backend verification failed:', {
+                  status: response.status,
+                  statusText: response.statusText,
+                  productId: purchase.productId,
+                });
+                throw new Error('Backend verification failed');
+              }
+            } else {
+              // ── No backend — acknowledge directly ──────────────────────
+              // Without a backend the Firestore entitlement document must be
+              // written manually or via a Google Play RTDN webhook later.
+              // We still acknowledge with Google Play so the purchase is not
+              // auto-refunded after 3 days.
+              console.warn(
+                '[Billing] BACKEND_VERIFY_URL is not set. ' +
+                'Acknowledging purchase without server verification. ' +
+                'Set BACKEND_VERIFY_URL before production release.'
+              );
             }
 
-            const data = await response.json();
-
-            // 2. If valid, unlock premium and acknowledge
-            // We rely on Firestore listener for actual entitlement state, 
-            // but we can acknowledge the purchase natively.
             await nativeBilling.acknowledgePurchase(purchase.purchaseToken);
           } catch (error) {
             console.error('[Billing] Purchase verification/acknowledgement error:', error);
-            // Surface a generic, user-safe fallback
             if (isMounted) {
               setBillingState({
                 status: 'error',
@@ -163,8 +176,9 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
       isMounted = false;
       unsubscribe?.();
     };
-  }, []);
+  }, [skus]);
 
+  // ── purchase ─────────────────────────────────────────────────────────────
   const purchase = useCallback(async (productId: string, offerToken: string) => {
     if (!nativeBilling.isAvailable()) {
       throw new Error('Billing is not available on this device.');
@@ -172,23 +186,23 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
     setIsPurchasing(true);
     try {
       await nativeBilling.launchPurchase(productId, offerToken);
-      // The listener above will handle the rest of the flow
+      // The subscriber above handles the rest of the flow.
     } catch (error: any) {
       console.error('[Billing] launchPurchase error:', error);
       setIsPurchasing(false);
 
-      // Map native error code to user-friendly message
       const code = error?.code ?? error?.userInfo?.code;
       const userMessage = getUserFacingBillingMessage(code);
 
-      // USER_CANCELED → null → silent return (no throw)
-      if (userMessage === null) return;
-
+      if (userMessage === null) return; // USER_CANCELED — silent
       throw new Error(userMessage);
     }
   }, []);
 
-  const restorePurchases = useCallback(async () => {
+  // ── restorePurchases ─────────────────────────────────────────────────────
+  // Returns the freshly-fetched NativeBillingState so callers can check
+  // the result synchronously without reading stale React state.
+  const restorePurchases = useCallback(async (): Promise<NativeBillingState> => {
     if (!nativeBilling.isAvailable()) {
       throw new Error('Billing is not available on this device.');
     }
@@ -196,20 +210,16 @@ export function useSubscription(skus: string[]): UseSubscriptionResult {
     try {
       await nativeBilling.initialize();
       const state = await nativeBilling.getCurrentState();
-      
-      if (state.status === 'subscribed') {
-        // If there are purchases, verify them via backend logic again if needed,
-        // or just rely on the listener logic picking them up.
-      }
-      setBillingState(sanitiseBillingError(state));
+      const safeState = sanitiseBillingError(state);
+      setBillingState(safeState);
+      return safeState; // ← return so callers don't read stale closure state
     } catch (error: any) {
       console.error('[Billing] restorePurchases error:', error);
 
       const code = error?.code ?? error?.userInfo?.code;
       const userMessage = getUserFacingBillingMessage(code);
 
-      if (userMessage === null) return;
-
+      if (userMessage === null) return { status: 'ready' }; // USER_CANCELED — silent
       throw new Error(userMessage);
     } finally {
       setIsPurchasing(false);

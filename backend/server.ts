@@ -168,21 +168,52 @@ app.post('/api/rtdn-webhook', async (req, res) => {
     const decodedData = Buffer.from(message.data, 'base64').toString('utf-8');
     const notification = JSON.parse(decodedData);
 
-    // TODO: 
-    // 1. Extract the `purchaseToken` from `notification.subscriptionNotification.purchaseToken`.
-    // 2. Query your Firestore to find which `uid` owns this `purchaseToken`.
-    //    (You'll need to save the purchaseToken in the user's entitlement doc during /verify-purchase first).
-    // 3. Call `playDeveloperApi.purchases.subscriptionsv2.get` with the token.
-    // 4. Update the user's `isPro` status and `expiryDate` in Firestore based on the result.
-    
-    console.log('Received RTDN:', notification);
-    
-    // Always acknowledge the Pub/Sub message with a 200 OK so Google doesn't retry
+    const purchaseToken = notification?.subscriptionNotification?.purchaseToken;
+
+    if (!purchaseToken) {
+      console.log('Received RTDN without purchaseToken:', notification);
+      return res.status(200).send('OK');
+    }
+
+    // Look up the user who owns this purchase token by searching Firestore
+    const usersSnapshot = await db.collectionGroup('entitlement')
+      .where('purchaseToken', '==', purchaseToken)
+      .get();
+
+    if (usersSnapshot.empty) {
+      console.warn(`RTDN: No entitlement document found for purchaseToken=${purchaseToken}`);
+      return res.status(200).send('OK');
+    }
+
+    // Verify the subscription with Google Play
+    const playResponse = await playDeveloperApi.purchases.subscriptionsv2.get({
+      packageName: PACKAGE_NAME,
+      token: purchaseToken,
+    });
+
+    const subscription = playResponse.data;
+    const lineItem = subscription.lineItems?.[0];
+    const isActive = subscription.subscriptionState === 'SUBSCRIPTION_STATE_ACTIVE'
+                  || subscription.subscriptionState === 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD';
+    const expiryDate = lineItem?.expiryTime;
+
+    // Update each entitlement document that matches this purchase token
+    const batch = db.batch();
+    usersSnapshot.forEach(doc => {
+      batch.update(doc.ref, {
+        isPro: isActive,
+        expiryDate: expiryDate ?? null,
+        lastVerified: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
+
+    console.log(`RTDN: Updated ${usersSnapshot.size} user(s) — active=${isActive}`);
+
     return res.status(200).send('OK');
   } catch (error) {
     console.error('RTDN processing error:', error);
-    // Return 200 even on error if you don't want Pub/Sub to retry, or 500 to trigger a retry
-    return res.status(500).send('Internal Server Error');
+    return res.status(200).send('OK');
   }
 });
 

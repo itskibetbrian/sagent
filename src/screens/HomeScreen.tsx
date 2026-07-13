@@ -52,7 +52,6 @@ export const HomeScreen: React.FC = () => {
     searchQuery,
     setSearchQuery,
     premiumPromptVisible,
-    premiumPromptReason,
     isPremium,
     monthlyShareCount,
     freeShareLimit,
@@ -71,9 +70,9 @@ export const HomeScreen: React.FC = () => {
   const visibleCategories = categories.length > 0
     ? categories
     : [
-        DEFAULT_CATEGORIES.find(cat => cat.id === 'other') ??
-        { id: 'other', name: 'Other', color: '#8B5CF6', icon: 'tag', createdAt: Date.now() },
-      ];
+      DEFAULT_CATEGORIES.find(cat => cat.id === 'other') ??
+      { id: 'other', name: 'Other', color: '#8B5CF6', icon: 'tag', createdAt: Date.now() },
+    ];
   const activeCategoryId = activeCategory && existingCategoryIds.has(activeCategory)
     ? activeCategory
     : categories.length === 0
@@ -98,7 +97,11 @@ export const HomeScreen: React.FC = () => {
 
   React.useEffect(() => {
     if (!isFocused) return;
-    void Promise.all([refreshShareUsage(), refreshCategories()]);
+    let cancelled = false;
+    Promise.all([refreshShareUsage(), refreshCategories()]).then(() => {
+      if (cancelled) return;
+    });
+    return () => { cancelled = true; };
   }, [isFocused, refreshShareUsage, refreshCategories]);
 
   const handleEdit = useCallback((snippet: Snippet) => {
@@ -180,20 +183,20 @@ export const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         ) : (
           <View style={styles.templateList}>
-              {fallbackTemplates.map(template => (
-                <TouchableOpacity
-                  key={template.id}
-                  style={[styles.templateButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
-                  onPress={() => void handleCreateTemplate(template)}
-                  activeOpacity={0.85}
-                >
-                  <Sparkles size={15} color={theme.primary} />
-                  <Text style={[styles.templateText, { color: theme.text }]} numberOfLines={1}>
-                    {template.title}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            {fallbackTemplates.map(template => (
+              <TouchableOpacity
+                key={template.id}
+                style={[styles.templateButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                onPress={() => void handleCreateTemplate(template)}
+                activeOpacity={0.85}
+              >
+                <Sparkles size={15} color={theme.primary} />
+                <Text style={[styles.templateText, { color: theme.text }]} numberOfLines={1}>
+                  {template.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
       </View>
     );
@@ -230,7 +233,7 @@ export const HomeScreen: React.FC = () => {
           categories={visibleCategories}
           activeId={activeCategoryId}
           onSelect={filterByCategory}
-          onManage={() => navigation.navigate('ManageCategories')}
+          onManage={() => requestAnimationFrame(() => navigation.navigate('ManageCategories'))}
         />
         <FreeSendIndicator />
       </View>
@@ -291,7 +294,7 @@ export const HomeScreen: React.FC = () => {
         visible={premiumPromptVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => {}}
+        onRequestClose={() => dismissPremiumPrompt()}
       >
         <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
           <Pressable style={StyleSheet.absoluteFill} />
@@ -300,7 +303,7 @@ export const HomeScreen: React.FC = () => {
               You've used all 50 free sends
             </Text>
             <Text style={[styles.modalBody, { color: theme.textSecondary }]}>
-              Upgrade to Pro after 50 free sends for unlimited sends and no watermark.
+              Upgrade to Pro for unlimited sends and no watermark.
             </Text>
             <TouchableOpacity
               style={[styles.modalPrimaryButton, { backgroundColor: theme.primary }]}
@@ -360,12 +363,6 @@ const styles = StyleSheet.create({
   cardPlaceholder: {
     flex: 1,
     marginBottom: 8,
-  },
-  count: {
-    ...textFont('regular'),
-    fontSize: 13,
-    paddingHorizontal: 16,
-    paddingBottom: 2,
   },
   sendUsageRow: {
     flexDirection: 'row',

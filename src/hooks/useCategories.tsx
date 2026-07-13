@@ -51,9 +51,11 @@ export const CategoriesProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   const deleteCategory = useCallback(async (id: string) => {
+    if (id === 'other') return; // Other is the fallback — never delete it
     await db.deleteCategory(id);
-    await refresh();
-  }, [refresh]);
+    // Update state directly instead of re-fetching so there's no flash/reappear
+    setCategories(prev => prev.filter(c => c.id !== id));
+  }, []);
 
   const value = useMemo(() => ({
     categories,
