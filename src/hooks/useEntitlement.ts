@@ -37,8 +37,11 @@ export function useEntitlement() {
               let data: EntitlementData = { isPro: false };
 
               if (documentSnapshot.exists) {
-                data = documentSnapshot.data() as EntitlementData;
-                isPro = data.isPro ?? false;
+                const raw = documentSnapshot.data();
+                if (raw) {
+                  data = raw as EntitlementData;
+                  isPro = data.isPro ?? false;
+                }
               }
 
               setEntitlement({

@@ -1,6 +1,7 @@
 package com.sagent.app.billing
 
 import android.app.Activity
+import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.Promise
@@ -32,10 +33,14 @@ class BillingModule(
     init {
         reactContext.addLifecycleEventListener(this)
         moduleScope.launch {
-            billingManager.billingState.collectLatest { state ->
-                if (hasListeners) {
-                    sendStateEvent(state)
+            try {
+                billingManager.billingState.collectLatest { state ->
+                    if (hasListeners) {
+                        sendStateEvent(state)
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("[BillingModule]", "Collector error", e)
             }
         }
     }
@@ -194,9 +199,14 @@ class BillingModule(
     }
 
     private fun sendStateEvent(state: BillingState) {
-        reactApplicationContext
-            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-            .emit(EVENT_STATE_CHANGED, stateToWritableMap(state))
+        try {
+            val emitter = reactApplicationContext.getJSModule(
+                DeviceEventManagerModule.RCTDeviceEventEmitter::class.java
+            )
+            emitter?.emit(EVENT_STATE_CHANGED, stateToWritableMap(state))
+        } catch (e: Exception) {
+            Log.e("[BillingModule]", "Failed to send state event", e)
+        }
     }
 
     private fun stateToWritableMap(state: BillingState) = Arguments.createMap().apply {
